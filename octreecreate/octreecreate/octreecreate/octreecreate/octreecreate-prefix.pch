@@ -1,0 +1,25 @@
+//
+//  octreecreate-prefix.pch
+//  octreecreate
+//
+//  Created by Dingwings on 5/6/14.
+//  Copyright (c) 2014 Dingwings. All rights reserved.
+//
+
+#ifndef octreecreate_octreecreate_prefix_pch
+#define octreecreate_octreecreate_prefix_pch
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
+#include <OpenGL/gl.h>
+
+#define WTFASSERT2( X, ... ) assert( X )
+#define OUTPUT printf
+#define _MAX_PATH 256
+
+#define sprintf_s snprintf
+#define strncpy_s strncpy
+
+#endif
