@@ -367,28 +367,30 @@ static void initInstancing( void )
 			float fAlpha = (float)*pacImage / 255.0f;
 			++pacImage;
 
-			float fScaling = 0.25f;
+			if( fAlpha > 0.0f )
+			{
+				float fScaling = 0.25f;
 
-			float fX = (float)( iX - (int)( iWidth / 2 ) ) * fScaling;
-			float fY = (float)( (int)( iHeight / 2 ) - iY ) * fScaling;
-			float fZ = 50.0f - (float)( rand() % 5 );
+				float fX = (float)( iX - (int)( iWidth / 2 ) ) * fScaling;
+				float fY = (float)( (int)( iHeight / 2 ) - iY ) * fScaling;
+				float fZ = 50.0f - (float)( rand() % 5 );
 
-			aInstanceInfo[iIndex].mColor.fX = fRed;
-			aInstanceInfo[iIndex].mColor.fY = fGreen;
-			aInstanceInfo[iIndex].mColor.fZ = fBlue;
-			aInstanceInfo[iIndex].mColor.fW = 1.0f;
+				aInstanceInfo[iIndex].mColor.fX = fRed;
+				aInstanceInfo[iIndex].mColor.fY = fGreen;
+				aInstanceInfo[iIndex].mColor.fZ = fBlue;
+				aInstanceInfo[iIndex].mColor.fW = 1.0f;
 
-			aInstanceInfo[iIndex].mScaling.fX = fScaling;
-			aInstanceInfo[iIndex].mScaling.fY = fScaling;
-			aInstanceInfo[iIndex].mScaling.fZ = fScaling;
-			aInstanceInfo[iIndex].mScaling.fW = 1.0f;
+				aInstanceInfo[iIndex].mScaling.fX = fScaling;
+				aInstanceInfo[iIndex].mScaling.fY = fScaling;
+				aInstanceInfo[iIndex].mScaling.fZ = fScaling;
+				aInstanceInfo[iIndex].mScaling.fW = 1.0f;
 
-			aInstanceInfo[iIndex].mTranslation.fX = fX;
-			aInstanceInfo[iIndex].mTranslation.fY = fY;
-			aInstanceInfo[iIndex].mTranslation.fZ = fZ;
-			aInstanceInfo[iIndex].mTranslation.fW = 1.0f;
-
-
+				aInstanceInfo[iIndex].mTranslation.fX = fX;
+				aInstanceInfo[iIndex].mTranslation.fY = fY;
+				aInstanceInfo[iIndex].mTranslation.fZ = fZ;
+				aInstanceInfo[iIndex].mTranslation.fW = 1.0f;
+			}
+			
 			++iIndex;
 		}
 	}
@@ -399,9 +401,6 @@ static void initInstancing( void )
 	int iScaleAttrib = 3;
 	int iTransAttrib = 4;
 	
-	//glGenVertexArrays( 1, &siModelVertexArray );
-	//glBindVertexArray( siModelVertexArray ); 
-
 	glGenBuffers( 1, &siInstanceVBO );
 	glBindBuffer( GL_ARRAY_BUFFER, siInstanceVBO );
 	glBufferData( GL_ARRAY_BUFFER, sizeof( tInstanceVertex ) * iNumIndices, aVerts, GL_STATIC_DRAW );
@@ -417,8 +416,6 @@ static void initInstancing( void )
 	glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, siIndexBuffer );
 	glBufferData( GL_ELEMENT_ARRAY_BUFFER, sizeof( int ) * iNumIndices, aiVBOIndices, GL_STATIC_DRAW );
 	
-	//glBindVertexArray( 0 );
-
 	free( aiVBOIndices );
 	free( aVerts );
 
