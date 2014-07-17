@@ -1,0 +1,78 @@
+precision mediump float;
+
+varying vec4 vPosition;
+varying vec4 vNormal;
+varying vec2 vTexCoord;
+varying vec4 vColor;
+
+uniform sampler2D		texture;
+
+const vec4 hazeColor = vec4( 0.8156, 0.913, 1.0, 1.0 );
+const float hazeMax = 60.0;
+const float texOffset = 0.025;
+const float blurFalloffDepth = 11.5;
+
+void main()
+{
+	float fDepth = clamp( ( hazeMax - vPosition.z ) * ( 1.0 / hazeMax ), 0.0, 1.0 );
+	float fBlurStrength = clamp( abs( blurFalloffDepth - vPosition.z ), 0.0, 1.0 ); 
+	
+	float fAlpha = texture2D( texture, vTexCoord );
+	vec4 totalTexColor = vec4( 0.0, 0.0, 0.0, 0.0 );
+	
+	float gfNumStepX = 16.0;
+	float gfNumStepY = 16.0;
+	
+	float gfOffsetX = ( 10.0 * fBlurStrength ) / 256.0;
+	float gfOffsetY = ( 10.0 * fBlurStrength ) / 256.0;
+	
+	float fStepX = gfOffsetX / gfNumStepX;
+	float fStepY = gfOffsetY / gfNumStepY;
+	
+	float fOffsetY = vTexCoord.y - gfOffsetY;
+	float fY = vTexCoord.y - gfOffsetY;
+	for( int iY = 0; iY < gfNumStepX; iY++ )
+	{
+		float fX = vTexCoord.x - gfOffsetX; 
+		for( int iX = 0; iX < gfNumStepX; iX++ )
+		{
+			vec2 texCoord = vec2( fX, fY );
+			vec4 color = texture2D( texture, texCoord );
+			totalTexColor += color;
+			
+			fX += fStepX;
+		}
+		
+		fY += fStepY;
+	}
+	
+	totalTexColor /= ( gfNumStepX * gfNumStepX );
+	
+#if 0
+	vec2 texCoord0 = vec2( vTexCoord.x - fBlurStrength * texOffset,
+						   vTexCoord.y - fBlurStrength * texOffset );
+						 
+	vec2 texCoord1 = vec2( vTexCoord.x + fBlurStrength * texOffset,
+						   vTexCoord.y - fBlurStrength * texOffset );
+						   
+	vec2 texCoord2 = vec2( vTexCoord.x - fBlurStrength * texOffset,
+						   vTexCoord.y + fBlurStrength * texOffset );
+						   
+	vec2 texCoord3 = vec2( vTexCoord.x + fBlurStrength * texOffset,
+						   vTexCoord.y + fBlurStrength * texOffset );
+	
+	vec4 totalTexColor = vec4( 0.0, 0.0, 0.0, 1.0 );
+	vec4 texColor0 = texture2D( texture, vTexCoord );
+	vec4 texColor1 = texture2D( texture, texCoord0 );
+	vec4 texColor2 = texture2D( texture, texCoord1 );
+	vec4 texColor3 = texture2D( texture, texCoord2 );
+	vec4 texColor4 = texture2D( texture, texCoord3 );
+	
+	totalTexColor = texColor0 * 0.2 + texColor1 * 0.2 + texColor2 * 0.2 + texColor3 * 0.2 + texColor4 * 0.2;
+#endif // #if 0
+	
+	gl_FragColor.xyz = totalTexColor.xyz * vColor.xyz * fDepth + 
+					   ( 1.0 - fDepth ) * hazeColor;
+					   
+	gl_FragColor.w = totalTexColor.w * vColor.w;
+}

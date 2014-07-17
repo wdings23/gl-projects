@@ -1,0 +1,13 @@
+run gdb:
+on device:
+ps | grep gl2jni
+in /data/data/com.android.gl2jni/lib: ./gdbserver :5039 —attach <pid>
+
+on pc:
+adb pull /system/bin/app_process
+/Users/dingwings/Downloads/android-ndk-r9b/toolchains/arm-linux-androideabi-4.6/prebuilt/darwin-x86_64/bin/arm-linux-androideabi-gdb app_process
+
+in gdb:
+target remote :5039
+set solib-search-path obj/local/armeabi
+

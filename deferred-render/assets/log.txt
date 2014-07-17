@@ -1,0 +1,18 @@
+ASSERT: 0
+c:\users\dingwings\documents\projects\src\3d\shadermanager.cpp
+CShaderManager::loadAllPrograms
+Line 191
+ERROR: "can't load all_shaders.txt error: Failed to open file"ASSERT: iInstanceShader > 0
+c:\users\dingwings\documents\projects\game\gamerender.cpp
+CGameRender::draw
+Line 908
+ERROR: "invalid shader"ASSERT: fp
+c:\users\dingwings\documents\projects\src\render\texturemanager.cpp
+CTextureManager::registerTexture
+Line 307
+ERROR: "can't load file: orig_assets_textureatlas0.png"ASSERT: 0
+c:\users\dingwings\documents\projects\src\game\level.cpp
+levelOnDemandLoad
+Line 205
+ERROR: "can't load scene.cac : Failed to open file
+"

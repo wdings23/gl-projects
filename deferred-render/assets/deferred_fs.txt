@@ -1,0 +1,28 @@
+uniform sampler2D albedoTex;
+uniform sampler2D normalTex;
+uniform sampler2D lightTex;
+uniform sampler2D posTex;
+uniform sampler2D depthTex;
+
+varying vec2 vTexCoord;
+varying vec2 vEyeSpacePos;
+
+const vec4 lightDir = vec4( 1.0, 1.0f, -1.0, 1.0 );
+const vec4 ambientLight = vec4( 0.1, 0.1, 0.1, 1.0 );
+const vec4 hazeColor = vec4( 0.5, 0.5, 0.5, 1.0 );
+
+void main( void )
+{
+	vec4 normLight = normalize( lightDir );
+	vec4 normal = texture2D( normalTex, vTexCoord );
+	float fDP = clamp( dot( normLight.xyz, normal.xyz ), 0.0, 1.0 );
+	
+	float fDepth = clamp( texture2D( depthTex, vTexCoord ) - 0.5, 0.0, 1.0 );
+	
+	vec4 color = texture2D( albedoTex, vTexCoord );
+	vec4 lightColor = texture2D( lightTex, vTexCoord );
+	vec3 totalColor = color.xyz * fDP * color.a + ambientLight.xyz * color.a + lightColor.xyz;
+	
+	gl_FragColor.xyz = color.xyz * fDP + ambientLight.xyz; //vec4( totalColor, 1.0 );
+	gl_FragColor.w = color.w;
+}

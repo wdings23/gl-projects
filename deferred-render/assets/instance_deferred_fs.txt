@@ -1,0 +1,10 @@
+varying vec4 vColor;
+varying vec4 vPosition;
+varying vec4 vNormal;
+
+void main( void )
+{
+	gl_FragData[0] = vColor;
+	gl_FragData[1] = vPosition;
+	gl_FragData[2] = vNormal;
+}

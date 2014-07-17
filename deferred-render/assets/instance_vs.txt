@@ -1,0 +1,22 @@
+layout (location = 0) in vec4 position;
+layout (location = 1) in vec4 normal;
+layout (location = 2) in vec4 color;
+layout (location = 3) in vec4 scaling;
+layout (location = 4) in vec4 translation;
+
+uniform mat4 view_matrix;
+uniform mat4 projection_matrix;
+
+varying vec4 vColor;
+varying vec4 vPosition;
+varying vec4 vNormal;
+
+void main( void )
+{
+	vColor = color;
+	vPosition.xyz = position.xyz * scaling.xyz + translation.xyz;
+	vPosition.w = 1.0;	
+	vNormal = normal;
+	
+	gl_Position = projection_matrix * view_matrix * vPosition;
+}

@@ -1,0 +1,74 @@
+<shaders>
+	<shader>
+		<name>simple_batch</name>
+		<vertex_shader>simple_batch_vs.txt</vertex_shader>
+		<fragment_shader>simple_batch_fs.txt</fragment_shader>
+	</shader>
+	
+	<shader>
+		<name>ui</name>
+		<vertex_shader>noperspective_vs.txt</vertex_shader>
+		<fragment_shader>texture_fs.txt</fragment_shader>
+	</shader>
+	
+	<shader>
+		<name>haze_batch</name>
+		<vertex_shader>simple_batch_vs.txt</vertex_shader>
+		<fragment_shader>haze_batch_fs.txt</fragment_shader>
+	</shader>
+	
+	<shader>
+		<name>blur_haze_batch</name>
+		<vertex_shader>simple_batch_vs.txt</vertex_shader>
+		<fragment_shader>blur_haze_batch_fs.txt</fragment_shader>
+	</shader>
+
+	<shader>
+		<name>grey_scale_batch</name>
+		<vertex_shader>simple_batch_vs.txt</vertex_shader>
+		<fragment_shader>grey_scale_fs.txt</fragment_shader>
+	</shader>
+
+	<shader>
+		<name>grey_scale_blur_haze_batch</name>
+		<vertex_shader>simple_batch_vs.txt</vertex_shader>
+		<fragment_shader>grey_scale_blur_haze_batch_fs.txt</fragment_shader>
+	</shader>
+
+	<shader>
+		<name>instance</name>
+		<vertex_shader>instance_vs.txt</vertex_shader>
+		<fragment_shader>instance_normal_fs.txt</fragment_shader>
+	</shader>
+	
+	<shader>
+		<name>instance_deferred</name>
+		<vertex_shader>instance_vs.txt</vertex_shader>
+		<fragment_shader>instance_deferred_fs.txt</fragment_shader>
+	</shader>
+	
+	<shader>
+		<name>deferred_shading</name>
+		<vertex_shader>deferred_vs.txt</vertex_shader>
+		<fragment_shader>deferred_fs.txt</fragment_shader>
+	</shader>
+	
+	<shader>
+		<name>light_model</name>
+		<vertex_shader>light_model_vs.txt</vertex_shader>
+		<fragment_shader>light_model_fs.txt</fragment_shader>
+	</shader>
+	
+	<shader>
+		<name>instance_light_model</name>
+		<vertex_shader>instance_vs.txt</vertex_shader>
+		<fragment_shader>instance_light_fs.txt</fragment_shader>
+	</shader>
+	
+	<shader>
+		<name>light_attenuation</name>
+		<vertex_shader>light_attenuation_vs.txt</vertex_shader>
+		<fragment_shader>light_attenuation_fs.txt</fragment_shader>
+	</shader>
+	
+</shaders>

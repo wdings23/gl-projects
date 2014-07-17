@@ -1,0 +1,14 @@
+<atlas>
+	<texture>
+		<name>default.png</name>
+		<atlas>orig_assets_textureatlas0.png</atlas>
+		<topleft>3,3</topleft>
+		<bottomright>9,9</bottomright>
+	</texture>
+	<texture>
+		<name>option_menu_close_bg.png</name>
+		<atlas>orig_assets_textureatlas0.png</atlas>
+		<topleft>12,2</topleft>
+		<bottomright>82,67</bottomright>
+	</texture>
+</atlas>

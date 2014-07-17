@@ -1,0 +1,8 @@
+ndk-build NDK_DEBUG=1
+ret=$?
+
+if [[ $ret != 0 ]]; then
+   echo "Error compiling C++"
+else
+   ant debug
+fi

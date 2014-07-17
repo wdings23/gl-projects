@@ -1,0 +1,21 @@
+precision mediump float;
+
+attribute vec4 position;
+attribute vec4 normal;
+attribute vec2 uv;
+attribute vec4 color;
+
+varying vec4 vPosition;
+varying vec4 vNormal;
+varying vec2 vTexCoord;
+varying vec4 vColor;
+
+void main()
+{
+	vPosition = position;
+	vNormal = normal;
+	vTexCoord = uv;
+	vColor = color;
+	
+	gl_Position = position;
+}

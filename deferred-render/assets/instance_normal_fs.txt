@@ -1,0 +1,14 @@
+varying vec4 vColor;
+varying vec4 vPosition;
+varying vec4 vNormal;
+
+const vec4 hazeColor = vec4( 0.5, 0.5, 0.5, 1.0 );
+const float fFarClip = 0.5;
+const float fHazeStartDistance = 10.0;
+
+void main( void )
+{
+	float fHazePct = clamp( ( vPosition.z * 0.5 + 0.5 ) - fHazeStartDistance, 0.0, 1.0 );
+	gl_FragColor.xyz = vColor * ( 1.0 - fHazePct ) + hazeColor * fHazePct;
+	gl_FragColor.w = 1.0;
+}
