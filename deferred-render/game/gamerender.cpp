@@ -38,6 +38,18 @@ struct InstanceInfo
 
 typedef struct InstanceInfo tInstanceInfo;
 
+struct LightInfo
+{
+	tVector4		mPosition;
+	tVector4		mXFormPosition;
+	tVector4		mColor;
+	float			mfSize;
+	float			mfAngle;
+	float			mfAngleInc;
+};
+
+typedef struct LightInfo tLightInfo;
+
 static GLuint siPositionBuffer;
 static GLuint siColorBuffer;
 static GLuint siScalingBuffer;
@@ -74,6 +86,9 @@ static int siNumSphereTris;
 
 static int siNumCubes = 100000;
 static CCamera const* spCamera;
+
+static tLightInfo* saLightInfo;
+const int giNumLights = 20;
 
 const float gfLightRadius = 10.0f;
 
@@ -445,7 +460,7 @@ static void initInstancing( void )
 
 				float fX = (float)( iX - (int)( iWidth / 2 ) ) * fScaling;
 				float fY = (float)( (int)( iHeight / 2 ) - iY ) * fScaling;
-				float fZ = 0.0f - (float)( rand() % 2 ) * 0.25f;
+				float fZ = 0.0f - (float)( rand() % 5 ) * 0.25f;
 
 				aInstanceInfo[iIndex].mColor.fX = fRed;
 				aInstanceInfo[iIndex].mColor.fY = fGreen;
@@ -586,6 +601,28 @@ static void initInstancing( void )
 	glBindBuffer( GL_ARRAY_BUFFER, 0 );
 	glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );	
 
+	// light info
+	const int iRandRange = 1000;
+	saLightInfo = (tLightInfo *)malloc( sizeof( tLightInfo ) * giNumLights );
+	for( int i = 0; i < giNumLights; i++ )
+	{
+		tLightInfo* pLightInfo = &saLightInfo[i];
+		pLightInfo->mColor.fX = (float)( rand() % iRandRange ) / (float)iRandRange;
+		pLightInfo->mColor.fY = (float)( rand() % iRandRange ) / (float)iRandRange;
+		pLightInfo->mColor.fZ = (float)( rand() % iRandRange ) / (float)iRandRange;
+		pLightInfo->mColor.fW = 1.0f;
+
+		pLightInfo->mPosition.fX = (float)( rand() % iRandRange ) / 50.0f;
+		pLightInfo->mPosition.fY = (float)( rand() % iRandRange ) / 50.0f;
+		pLightInfo->mPosition.fZ = (float)( rand() % iRandRange ) / 500.0f;
+		pLightInfo->mPosition.fW = 1.0f;
+
+		pLightInfo->mfSize = (float)( rand() % iRandRange ) / 100.0f;
+		pLightInfo->mfAngle = 0.0f;
+		pLightInfo->mfAngleInc = (float)( rand() % iRandRange ) / ( (float)iRandRange * 10.0f );
+		pLightInfo->mfAngleInc -= (float)iRandRange * 0.5f / ( (float)iRandRange * 10.0f );;
+	}
+
 	// random direction texture
 	CTextureManager::instance()->registerTexture( "random_dir.tga" );
 }
@@ -672,42 +709,19 @@ static void drawLightModel( void )
 	glColorMask( GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE );	// don't write to color
 	drawInstances( spCamera, iFBO, iInstanceShader );
 
-	static tVector4 saLightPos[4] = 
+	for( int i = 0; i < giNumLights; i++ ) 
 	{
-		{ 15.0f, 0.0f, 0.0f, 1.0f },
-		{ -8.0f, 0.0f, 1.0f, 1.0f },
-		{ 10.0f, -5.0f, -1.0f, 1.0f },
-		{ -5.0f, 5.0f, 10.0f, 1.0f },
-	};
+		tLightInfo* pLight = &saLightInfo[i];
 
-	static tVector4 saLightColor[4] = 
-	{
-		{ 0.0f, 1.0f, 0.0f, 1.0f },
-		{ 1.0f, 0.0f, 0.0f, 1.0f },
-		{ 0.0f, 0.0f, 1.0f, 1.0f },
-		{ 1.0f, 1.0f, 0.0f, 1.0f },
-	};
+		float fCosAngle = cosf( pLight->mfAngle );
+		float fSinAngle = sinf( pLight->mfAngle );
 
-	float afLightSizes[4] = 
-	{
-		6.0f, 4.0f, 5.0f, 4.0f,
-	};
+		pLight->mXFormPosition.fX = fCosAngle * pLight->mPosition.fX - fSinAngle * pLight->mPosition.fY;
+		pLight->mXFormPosition.fY = fSinAngle * pLight->mPosition.fX + fCosAngle * pLight->mPosition.fY;
+		pLight->mXFormPosition.fZ = pLight->mPosition.fZ;
+		pLight->mXFormPosition.fW = 1.0f;
 
-	static float safLightAngles[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
-	static float safLightAngleInc[4] = { 0.01f, 0.03f, 0.04f, 0.005f };
-	
-	static tVector4 saXFormLightPos[4];
-
-	// rotate light position
-	for( int i = 0; i < sizeof( saLightPos ) / sizeof( *saLightPos ); i++ )
-	{
-		float fCosAngle = cosf( safLightAngles[i] );
-		float fSinAngle = sinf( safLightAngles[i] );
-		
-		saXFormLightPos[i].fX = fCosAngle * saLightPos[i].fX - fSinAngle * saLightPos[i].fY;
-		saXFormLightPos[i].fY = fSinAngle * saLightPos[i].fX + fCosAngle * saLightPos[i].fY;
-	
-		safLightAngles[i] += safLightAngleInc[i];
+		pLight->mfAngle += pLight->mfAngleInc;
 	}
 
 	// matrix
@@ -720,15 +734,15 @@ static void drawLightModel( void )
 	// disable writing to depth buffer
 	glDepthMask( GL_FALSE );
 
-	for( int i = 0; i < 4; i++ )
+	for( int i = 0; i < giNumLights; i++ )
 	{
-		float fLightSize = afLightSizes[i];
-
+		tLightInfo* pLight = &saLightInfo[i];
+		
 		glUseProgram( iLightShader );
 		
 		tMatrix44 modelViewMatrix, translateMatrix, scaleMatrix, translateScaleMatrix;
-		Matrix44Translate( &translateMatrix, &saXFormLightPos[i] );
-		Matrix44Scale( &scaleMatrix, fLightSize, fLightSize, fLightSize );
+		Matrix44Translate( &translateMatrix, &pLight->mXFormPosition );
+		Matrix44Scale( &scaleMatrix, pLight->mfSize, pLight->mfSize, pLight->mfSize );
 		Matrix44Multiply( &translateScaleMatrix, &translateMatrix, &scaleMatrix );
 
 		Matrix44Multiply( &modelViewMatrix, pViewMatrix, &translateScaleMatrix );
@@ -746,7 +760,7 @@ static void drawLightModel( void )
 
 		GLint iLightColor = glGetUniformLocation( iLightShader, "lightColor" );
 		//WTFASSERT2( iLightColor >= 0, "can't find lightColor semantic" );
-		glUniform4f( iLightColor, saLightColor[i].fX, saLightColor[i].fY, saLightColor[i].fZ, saLightColor[i].fW );
+		glUniform4f( iLightColor, pLight->mColor.fX,pLight->mColor.fY, pLight->mColor.fZ, pLight->mColor.fW );
 		
 		GLint iPos = glGetAttribLocation( iLightShader, "position" ); 
 		
@@ -794,11 +808,11 @@ static void drawLightModel( void )
 			// light's color
 			GLint iLightAttenColor = glGetUniformLocation( iLightAttenShader, "lightColor" );
 			WTFASSERT2( iLightAttenColor >= 0, "invalid semantic lightColor" );
-			glUniform4f( iLightAttenColor, saLightColor[i].fX, saLightColor[i].fY, saLightColor[i].fZ, saLightColor[i].fW );
+			glUniform4f( iLightAttenColor, pLight->mColor.fX, pLight->mColor.fY, pLight->mColor.fZ, pLight->mColor.fW );
 
 			GLint iLightAttenPos = glGetUniformLocation( iLightAttenShader, "lightPos" );
 			//WTFASSERT2( iLightAttenPos >= 0, "invalid semantic lightPos" );
-			glUniform4f( iLightAttenPos, saLightPos[i].fX, saLightPos[i].fY, saLightPos[i].fZ, saLightPos[i].fW );
+			glUniform4f( iLightAttenPos, pLight->mXFormPosition.fX, pLight->mXFormPosition.fY, pLight->mXFormPosition.fZ, pLight->mXFormPosition.fW );
 
 			// set matrices
 			iViewMatrix = glGetUniformLocation( iLightAttenShader, "view_matrix" );
