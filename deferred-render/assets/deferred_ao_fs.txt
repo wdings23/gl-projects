@@ -11,10 +11,10 @@ varying vec2 vEyeSpacePos;
 const float gfScreenWidth = 640.0;
 const float gfScreenHeight = 960.0; 
 const float gfRandomTextureSize = 64.0;
-const float gfSampleDistanceScale = 15.0;
-const float gfBias = 0.1;
-const float gfSampleRadius = 0.25;
-const float gfAmbientOcclusionIntensity = 5.0;
+const float gfSampleDistanceScale = 10.0;
+const float gfBias = -0.2;
+const float gfSampleRadius = 0.2;
+const float gfAmbientOcclusionIntensity = 6.0;
 
 const vec2 gaDirs[4] = vec2[4]( vec2( 1.0, 0.0 ), vec2( -1.0, 0.0 ), vec2( 0.0, 1.0 ), vec2( 0.0, -1.0 ) );
 
@@ -41,6 +41,7 @@ float getAmbientOcclusionValue( vec2 uv, vec2 fromOriginUVOffset, vec3 originPos
 	vec3 direction = normalize( diff );						// direction from origin to the end position of the ray
 	float fDistance = length( diff ) * gfSampleDistanceScale;
 
+	normal.z *= -1.0;
 	float fNormalDotDirection = dot( normal, direction );
 
 	// the angle from origin to the ray's destination ( > 0 == in front )
@@ -82,6 +83,6 @@ void main( void )
 
 	fAmbientOcclusionContrib /= 16.0;
 	
-	gl_FragColor.xyz = vec3( 1.0, 1.0, 1.0 ) * ( 1.0 - fAmbientOcclusionContrib ) * albedoColor.xyz;
+	gl_FragColor.xyz = ( 1.0 - fAmbientOcclusionContrib ) * albedoColor.xyz;
 	gl_FragColor.w = albedoColor.w;
 }

@@ -373,7 +373,7 @@ static void initInstancing( void )
 
 				float fX = (float)( iX - (int)( iWidth / 2 ) ) * fScaling;
 				float fY = (float)( (int)( iHeight / 2 ) - iY ) * fScaling;
-				float fZ = 50.0f - (float)( rand() % 5 );
+				float fZ = 2.0f - (float)( rand() % 2 ) * 0.15f;
 
 				aInstanceInfo[iIndex].mColor.fX = fRed;
 				aInstanceInfo[iIndex].mColor.fY = fGreen;
