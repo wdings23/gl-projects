@@ -88,7 +88,7 @@ static int siNumCubes = 100000;
 static CCamera const* spCamera;
 
 static tLightInfo* saLightInfo;
-const int giNumLights = 20;
+const int giNumLights = 100;
 
 const float gfLightRadius = 10.0f;
 
@@ -612,12 +612,12 @@ static void initInstancing( void )
 		pLightInfo->mColor.fZ = (float)( rand() % iRandRange ) / (float)iRandRange;
 		pLightInfo->mColor.fW = 1.0f;
 
-		pLightInfo->mPosition.fX = (float)( rand() % iRandRange ) / 50.0f;
-		pLightInfo->mPosition.fY = (float)( rand() % iRandRange ) / 50.0f;
+		pLightInfo->mPosition.fX = (float)( rand() % iRandRange ) / 50.0f + 0.0f;
+		pLightInfo->mPosition.fY = (float)( rand() % iRandRange ) / 50.0f + 0.0f;
 		pLightInfo->mPosition.fZ = (float)( rand() % iRandRange ) / 500.0f;
 		pLightInfo->mPosition.fW = 1.0f;
 
-		pLightInfo->mfSize = (float)( rand() % iRandRange ) / 100.0f;
+		pLightInfo->mfSize = (float)( rand() % iRandRange ) / 200.0f;
 		pLightInfo->mfAngle = 0.0f;
 		pLightInfo->mfAngleInc = (float)( rand() % iRandRange ) / ( (float)iRandRange * 10.0f );
 		pLightInfo->mfAngleInc -= (float)iRandRange * 0.5f / ( (float)iRandRange * 10.0f );;
@@ -729,8 +729,8 @@ static void drawLightModel( void )
 	tMatrix44 const* pProjMatrix = spCamera->getProjectionMatrix();
 
 	glEnable( GL_BLEND );
-	glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
-
+	glBlendFunc( GL_SRC_ALPHA, GL_ONE );
+	
 	// disable writing to depth buffer
 	glDepthMask( GL_FALSE );
 
