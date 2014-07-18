@@ -20,6 +20,24 @@ struct LevelJobData
 
 typedef struct LevelJobData tLevelJobData;
 
+struct InstanceVertex
+{
+	tVector4	mPos;
+	tVector4	mNormal;
+	tVector2	mUV;
+};
+
+typedef struct InstanceVertex tInstanceVertex;
+
+struct InstanceInfo
+{
+	tVector4		mTranslation;
+	tVector4		mScaling;
+	tVector4		mColor;
+};
+
+typedef struct InstanceInfo tInstanceInfo;
+
 static GLuint siPositionBuffer;
 static GLuint siColorBuffer;
 static GLuint siScalingBuffer;
@@ -45,14 +63,14 @@ static GLuint siLightStencilBuffer;
 static GLuint siAmbientOcclusionFBO;
 static GLuint siAmbientOcclusionTexture;
 
-static GLuint siCylinderBuffer;
-static GLuint siCylinderIndexBuffer;
+static GLuint siSphereBuffer;
+static GLuint siSphererIndexBuffer;
 
 static GLuint siInstanceVBO;
 static GLuint siInstanceInfoVBO;
 static GLuint siModelVertexArray;
 
-static int siNumCylinderTris;
+static int siNumSphereTris;
 
 static int siNumCubes = 100000;
 static CCamera const* spCamera;
@@ -62,177 +80,228 @@ const float gfLightRadius = 10.0f;
 /*
 **
 */
-static void createSphere( GLfloat** paPos, 
-						  GLuint** paiIndices,
-						  int* piNumPos,
-						  int* piNumTris,
-						  float fRadius,
-						  int iNumSegments )
+static void createSphere( void )
 {
-	*piNumPos = iNumSegments * ( iNumSegments - 1 ) + 2;
-	*piNumTris = ( ( iNumSegments - 1 ) * iNumSegments ) * 2;
-	
-	*paPos = (GLfloat *)malloc( *piNumPos * 4 * sizeof( float ) );
-	*paiIndices = (GLuint *)malloc( *piNumTris * 3 * sizeof( GLuint ) );
-	
-	GLuint* aiIndices = *paiIndices;
-	GLfloat* pfVal = *paPos;
-	
-	float fTwoPI = 2.0f * 3.14159f; 
-	float fYPerSegment = fRadius / (float)( iNumSegments >> 1 );
-	float fAnglePerSegment = fTwoPI / (float)iNumSegments;
-	
-	GLuint iCount = 0;
-	int iTriangle = 0;
-	for( int iY = 0; iY <= iNumSegments; iY++ )
+	char szFullPath[256];
+	getFullPath( szFullPath, "sphere.obj" );
+	FILE* fp = fopen( szFullPath, "rb" );
+	fseek( fp, 0, SEEK_END );
+	unsigned long iFileSize = ftell( fp );
+	fseek( fp, 0, SEEK_SET );
+
+	char* acBuffer = (char *)malloc( ( iFileSize + 1 ) * sizeof( char ) );
+	fread( acBuffer, sizeof( char ), iFileSize, fp );
+	acBuffer[iFileSize] = '\0';
+
+	const int iMaxData = 1000;
+	tVector4* aPos = (tVector4 *)malloc( sizeof( tVector4 ) * iMaxData );
+	tVector4* aNorm = (tVector4 *)malloc( sizeof( tVector4 ) * iMaxData );
+	tVector2* aUV = (tVector2 *)malloc( sizeof( tVector2 ) * iMaxData );
+	tFace* aFace = (tFace *)malloc( sizeof( tFace ) * iMaxData );
+
+	tVector2* pCurrUV = aUV;
+	tVector4* pCurrPos = aPos;
+	tVector4* pCurrNorm = aNorm;
+	tFace* pCurrFace = aFace;
+
+	int iNumPos = 0;
+	int iNumNorm = 0;
+	int iNumUV = 0;
+	int iNumFaces = 0;
+
+	char* pacCurrPos = acBuffer;
+	for( ;; )
 	{
-		float fY = fRadius - (float)iY * fYPerSegment;
-		float fCurrRadius = sqrtf( fRadius * fRadius - fabs( fY ) * fabs( fY ) );
-
-		OUTPUT( "segment %d\n", iY );
-
-		if( fCurrRadius <= 0.0f )
+		// get line
+		char szLine[512];
+		memset( szLine, 0, sizeof( szLine ) );
+		char* pacStartPos = pacCurrPos;
+		
+		do
 		{
-			*pfVal++ = 0.0f;
-			*pfVal++ = fY;
-			*pfVal++ = 0.0f;
-			*pfVal++ = 1.0f;
+			++pacCurrPos;
+		} while( *pacCurrPos != '\n' && *pacCurrPos != '\0' );
 
-			OUTPUT( "%d ( %f, %f, %f )\n", iCount, *(pfVal-4), *(pfVal-3), *(pfVal-2) );
+		if( *pacCurrPos == '\n' )
+		{
+			++pacCurrPos;
+		}
+
+		unsigned long iLineSize = (unsigned long)pacCurrPos - (unsigned long)pacStartPos;
+		memcpy( szLine, pacStartPos, iLineSize );
+
+		// check the data type
+		if( szLine[0] == 'v' )
+		{
+			// vertex position, uv, or normal
+
+			float afVal[] = { 0.0f, 0.0f, 0.0f };
+			char* pacNumStart = strstr( szLine, " " ) + 1;
+			char* pacLineEnd = strstr( szLine, "\n" );
+			bool bDone = false;
+			for( int i = 0; i < 3; i++ )
+			{
+				char szNum[64];
+				memset( szNum, 0, sizeof( szNum ) );
+				char* pacNumEnd = strstr( pacNumStart, " " );
+
+				if( pacNumEnd == NULL )
+				{
+					bDone = true;
+					pacNumEnd = pacLineEnd;
+				}
+
+				unsigned long iNumSize = (unsigned long)pacNumEnd - (unsigned long)pacNumStart;
+				memcpy( szNum, pacNumStart, iNumSize );
+				afVal[i] = (float)atof( szNum ); 
+
+				pacNumStart = pacNumEnd + 1;
+				if( bDone )
+				{
+					break;
+				}
+			}
+
+			if( szLine[1] == 't' )
+			{
+				pCurrUV->fX = afVal[0]; 
+				pCurrUV->fY = afVal[1]; 
+				
+				++pCurrUV;
+				++iNumUV;
+			}
+			else if( szLine[1] == 'n' )
+			{
+				pCurrNorm->fX = afVal[0]; 
+				pCurrNorm->fY = afVal[1]; 
+				pCurrNorm->fZ = afVal[2]; 
+				pCurrNorm->fW = 1.0f; 
+
+				++pCurrNorm;
+				++iNumNorm;
+			}
+			else 
+			{
+				pCurrPos->fX = afVal[0]; 
+				pCurrPos->fY = afVal[1]; 
+				pCurrPos->fZ = afVal[2]; 
+				pCurrPos->fW = 1.0f; 
+
+				++pCurrPos;
+				++iNumPos;
+			}
+		}
+		else if( szLine[0] == 'f' )
+		{
+			// face
+			int aiVal[] = { 0, 0, 0 };
+			char* pacNumStart = strstr( szLine, " " ) + 1;
+			char* pacLineEnd = strstr( szLine, "\n" );
+			bool bDone = false;
+			for( int i = 0; i < 3; i++ )
+			{
+				char szNum[64];
+				memset( szNum, 0, sizeof( szNum ) );
+				char* pacNumEnd = strstr( pacNumStart, " " );
+
+				if( pacNumEnd == NULL )
+				{
+					bDone = true;
+					pacNumEnd = pacLineEnd;
+				}
+
+				unsigned long iNumSize = (unsigned long)pacNumEnd - (unsigned long)pacNumStart;
+				memcpy( szNum, pacNumStart, iNumSize );
+				
+				char* paiPos = strtok( szNum, "/" );
+				char* paiNorm = strtok( NULL, "/" );
+				char* paiUV = strtok( NULL, "/ " );
+
+				pCurrFace->maiV[i] = atoi( paiPos ) - 1;
+				pCurrFace->maiUV[i] = atoi( paiUV ) - 1;
+				pCurrFace->maiNorm[i] = atoi( paiNorm ) - 1;
+				
+				pacNumStart = pacNumEnd + 1;
+				if( bDone )
+				{
+					break;
+				}
+			}	// for i = 0 to 3
+
+			++pCurrFace;
+			++iNumFaces;
+		}
+
+		unsigned long iCurrPos = (unsigned long)pacCurrPos - (unsigned long)acBuffer;
+		if( iCurrPos >= iFileSize )
+		{
+			break;
+		}
+	}
+
+	// vertices in the faces
+	tInstanceVertex* aVertices = (tInstanceVertex *)malloc( sizeof( tInstanceVertex ) * iNumFaces * 3 );
+	tInstanceVertex* pVert = aVertices;
+
+	int iCount = 0;
+	for( int i = 0; i < iNumFaces; i++ )
+	{
+		tFace const* pFace = &aFace[i];
+
+		for( int j = 0; j < 3; j++ )
+		{
+			tVector4 const* pPos = &aPos[pFace->maiV[j]];
+			tVector4 const* pNorm = &aNorm[pFace->maiV[j]];
+			tVector2 const* pUV = &aUV[pFace->maiV[j]];
+
+			memcpy( &pVert->mPos, pPos, sizeof( tVector4 ) );
+			memcpy( &pVert->mNormal, pNorm, sizeof( tVector4 ) );
+			memcpy( &pVert->mUV, pUV, sizeof( tVector2 ) );
+		
+			++pVert;
 			++iCount;
-		}
-		else
-		{
-			for( int iX = 0; iX < iNumSegments; iX++ )
-			{
-				// original vector at ( 1, 0 ), rotate about y axis
 
-				float fCurrAngle = (float)iX * fAnglePerSegment;
-				*pfVal++ = cosf( fCurrAngle ) * fCurrRadius;	// x
-				*pfVal++ = fY;
-				*pfVal++ = -sinf( fCurrAngle ) * fCurrRadius;	// z
-				*pfVal++ = 1.0f;
+		}	// for j = 0 to 3
 
-				OUTPUT( "%d ( %f, %f, %f )\n", iCount, *(pfVal-4), *(pfVal-3), *(pfVal-2) );
-				++iCount;
-				
-				if( iY == 1 )
-				{
-					if( iX > 0 )
-					{
-						*aiIndices++ = iCount - 2;
-						*aiIndices++ = iCount - 1;
-						*aiIndices++ = 0;
-					
-						OUTPUT( "triangle %d ( %d, %d, %d )\n", iTriangle, *(aiIndices-3), *(aiIndices-2), *(aiIndices-1) ); 
-						++iTriangle;
-					}
-				}
-				else
-				{
-					if( iX > 0 )
-					{
-						*aiIndices++ = iCount - iNumSegments - 2;
-						*aiIndices++ = iCount - iNumSegments - 1;
-						*aiIndices++ = iCount - 2;
-						
-						OUTPUT( "triangle %d ( %d, %d, %d )\n", iTriangle, *(aiIndices-3), *(aiIndices-2), *(aiIndices-1) ); 
-						++iTriangle;
+		WTFASSERT2( iCount <= iNumFaces * 3, "array out of bounds" );
 
-						*aiIndices++ = iCount - iNumSegments - 1;
-						*aiIndices++ = iCount - 1;
-						*aiIndices++ = iCount - 2;
-						
+	}	// for i = 0 to 3
 
-						OUTPUT( "triangle %d ( %d, %d, %d )\n", iTriangle, *(aiIndices-3), *(aiIndices-2), *(aiIndices-1) ); 
-						++iTriangle;
-					}
-				}
-			}	// for x = 0 to num segments
+	int* aiIndices = (int *)malloc( sizeof( int ) * iNumFaces * 3 );
+	for( int i = 0; i < iNumFaces * 3; i++ )
+	{
+		aiIndices[i] = i;
+	}
 
-			int iStartIndex = ( iY - 1 ) * iNumSegments + 1;
+	// positions
+	glGenBuffers( 1, &siSphereBuffer );
+	glBindBuffer( GL_ARRAY_BUFFER, siSphereBuffer );
+	glBufferData( GL_ARRAY_BUFFER, sizeof( tInstanceVertex ) * iNumFaces * 3, aVertices, GL_STATIC_DRAW );
+	glEnableVertexAttribArray( 0 );
+	glVertexAttribPointer( 0, 4, GL_FLOAT, GL_FALSE, sizeof( tInstanceVertex ), NULL );
 
-			// add the last triangle or quad
-			if( iY == 1 )
-			{
-				*aiIndices++ = iCount - 1;
-				*aiIndices++ = iStartIndex;
-				*aiIndices++ = 0;
-				
-				OUTPUT( "triangle %d ( %d, %d, %d )\n", iTriangle, *(aiIndices-3), *(aiIndices-2), *(aiIndices-1) ); 
-				++iTriangle;
-			}
-			else
-			{
-				*aiIndices++ = iCount - 1;
-				*aiIndices++ = iStartIndex;
-				*aiIndices++ = iStartIndex - iNumSegments;
-				
-				OUTPUT( "triangle %d ( %d, %d, %d )\n", iTriangle, *(aiIndices-3), *(aiIndices-2), *(aiIndices-1) ); 
-				++iTriangle;
+	// indices
+	glGenBuffers( 1, &siSphererIndexBuffer );
+	glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, siSphererIndexBuffer );
+	glBufferData( GL_ELEMENT_ARRAY_BUFFER, sizeof( int ) * iNumFaces * 3, aiIndices, GL_STATIC_DRAW );
 
-				*aiIndices++ = iCount - 1;
-				*aiIndices++ = iStartIndex - iNumSegments;
-				*aiIndices++ = iStartIndex - 1;
-				
-				OUTPUT( "triangle %d ( %d, %d, %d )\n", iTriangle, *(aiIndices-3), *(aiIndices-2), *(aiIndices-1) ); 
-				++iTriangle;
-			}
+	glBindBuffer( GL_ARRAY_BUFFER, 0 );
+	glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );	
 
-		}	// if current radius > 0
+	siNumSphereTris = iNumFaces * 3;
 
-		if( iY == iNumSegments )
-		{
-			int iStartIndex = ( iY - 2 ) * iNumSegments + 1;
-			for( int iX = 0; iX < iNumSegments; iX++ )
-			{
-				if( iX > 0 )
-				{
-					*aiIndices++ = iStartIndex + iX - 1;
-					*aiIndices++ = iStartIndex + iX;
-					*aiIndices++ = *piNumPos - 1;	
+	free( aiIndices );
+	free( aVertices );
 
-					OUTPUT( "triangle %d ( %d, %d, %d )\n", iTriangle, *(aiIndices-3), *(aiIndices-2), *(aiIndices-1) ); 
-					++iTriangle;
-				}
-			}
+	free( aFace );
+	free( aUV );
+	free( aNorm );
+	free( aPos );
 
-			*aiIndices++ = iStartIndex;
-			*aiIndices++ = iCount - 2;
-			*aiIndices++ = *piNumPos - 1;
+	free( acBuffer );
+	fclose( fp );
 
-			OUTPUT( "triangle %d ( %d, %d, %d )\n", iTriangle, *(aiIndices-3), *(aiIndices-2), *(aiIndices-1) ); 
-			++iTriangle;
-		}
-
-	}	// for y = 0 to num segments
-
-	// last vertex
-	*pfVal++ = 0.0f;
-	*pfVal++ = -fRadius;
-	*pfVal++ = 0.0f;
-	*pfVal++ = 1.0f;
-	
-	++iCount;
 }
-
-struct InstanceVertex
-{
-	tVector4	mPos;
-	tVector4	mNormal;
-	tVector2	mUV;
-};
-
-typedef struct InstanceVertex tInstanceVertex;
-
-struct InstanceInfo
-{
-	tVector4		mTranslation;
-	tVector4		mScaling;
-	tVector4		mColor;
-};
-
-typedef struct InstanceInfo tInstanceInfo;
 
 /*
 **
@@ -512,26 +581,8 @@ static void initInstancing( void )
 		glBindRenderbuffer( GL_RENDERBUFFER, 0 );
 	}
 
-	GLfloat* aSpherePos = NULL;
-	GLuint* aiSphereIndices = NULL;
-	int iNumPos = 0;
-	int iNumTris = 0;
-
-	createSphere( &aSpherePos, &aiSphereIndices, &iNumPos, &iNumTris, gfLightRadius, 8 );
-	siNumCylinderTris = iNumTris * 3;
-
-	// positions
-	glGenBuffers( 1, &siCylinderBuffer );
-	glBindBuffer( GL_ARRAY_BUFFER, siCylinderBuffer );
-	glBufferData( GL_ARRAY_BUFFER, sizeof( float ) * iNumPos * 4, aSpherePos, GL_STATIC_DRAW );
-	glEnableVertexAttribArray( iPosAttrib );
-	glVertexAttribPointer( iPosAttrib, 4, GL_FLOAT, GL_FALSE, 0, NULL );
-
-	// indices
-	glGenBuffers( 1, &siCylinderIndexBuffer );
-	glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, siCylinderIndexBuffer );
-	glBufferData( GL_ELEMENT_ARRAY_BUFFER, sizeof( int ) * iNumTris * 3, aiSphereIndices, GL_STATIC_DRAW );
-
+	createSphere();
+	
 	glBindBuffer( GL_ARRAY_BUFFER, 0 );
 	glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );	
 
@@ -598,7 +649,7 @@ static void drawInstances( CCamera const* pCamera, GLuint iFBO, GLuint iShader )
 }
 
 /*
-**
+** draw light models into the light texture to be blended with the final render target
 */
 static void drawLightModel( void )
 {
@@ -623,10 +674,10 @@ static void drawLightModel( void )
 
 	static tVector4 saLightPos[4] = 
 	{
-		{ 0.0f, 0.0f, 0.0f, 1.0f },
-		{ -20.0f, 0.0f, 1.0f, 1.0f },
+		{ 15.0f, 0.0f, 0.0f, 1.0f },
+		{ -8.0f, 0.0f, 1.0f, 1.0f },
 		{ 10.0f, -5.0f, -1.0f, 1.0f },
-		{ -10.0f, 5.0f, 10.0f, 1.0f },
+		{ -5.0f, 5.0f, 10.0f, 1.0f },
 	};
 
 	static tVector4 saLightColor[4] = 
@@ -637,24 +688,50 @@ static void drawLightModel( void )
 		{ 1.0f, 1.0f, 0.0f, 1.0f },
 	};
 
+	float afLightSizes[4] = 
+	{
+		6.0f, 4.0f, 5.0f, 4.0f,
+	};
+
+	static float safLightAngles[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+	static float safLightAngleInc[4] = { 0.01f, 0.03f, 0.04f, 0.005f };
+	
+	static tVector4 saXFormLightPos[4];
+
+	// rotate light position
+	for( int i = 0; i < sizeof( saLightPos ) / sizeof( *saLightPos ); i++ )
+	{
+		float fCosAngle = cosf( safLightAngles[i] );
+		float fSinAngle = sinf( safLightAngles[i] );
+		
+		saXFormLightPos[i].fX = fCosAngle * saLightPos[i].fX - fSinAngle * saLightPos[i].fY;
+		saXFormLightPos[i].fY = fSinAngle * saLightPos[i].fX + fCosAngle * saLightPos[i].fY;
+	
+		safLightAngles[i] += safLightAngleInc[i];
+	}
+
 	// matrix
 	tMatrix44 const* pViewMatrix = spCamera->getViewMatrix();
 	tMatrix44 const* pProjMatrix = spCamera->getProjectionMatrix();
 
 	glEnable( GL_BLEND );
-	glBlendFunc( GL_ONE, GL_ONE );
+	glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
 
 	// disable writing to depth buffer
 	glDepthMask( GL_FALSE );
 
 	for( int i = 0; i < 4; i++ )
 	{
-		glUseProgram( iLightShader );
-		saLightPos[i].fX += 0.01f;
+		float fLightSize = afLightSizes[i];
 
-		tMatrix44 modelViewMatrix, translateMatrix;
-		Matrix44Translate( &translateMatrix, &saLightPos[i] );
-		Matrix44Multiply( &modelViewMatrix, pViewMatrix, &translateMatrix );
+		glUseProgram( iLightShader );
+		
+		tMatrix44 modelViewMatrix, translateMatrix, scaleMatrix, translateScaleMatrix;
+		Matrix44Translate( &translateMatrix, &saXFormLightPos[i] );
+		Matrix44Scale( &scaleMatrix, fLightSize, fLightSize, fLightSize );
+		Matrix44Multiply( &translateScaleMatrix, &translateMatrix, &scaleMatrix );
+
+		Matrix44Multiply( &modelViewMatrix, pViewMatrix, &translateScaleMatrix );
 
 		tMatrix44 viewMatrix, projMatrix;
 		Matrix44Transpose( &viewMatrix, &modelViewMatrix );
@@ -677,10 +754,10 @@ static void drawLightModel( void )
 //glColorMask( GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE );
 
 		// bind vbo
-		glBindBuffer( GL_ARRAY_BUFFER, siCylinderBuffer );
+		glBindBuffer( GL_ARRAY_BUFFER, siSphereBuffer );
 		glEnableVertexAttribArray( iPos );
 		glVertexAttribPointer( iPos, 4, GL_FLOAT, GL_FALSE, 0, NULL );
-		glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, siCylinderIndexBuffer );
+		glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, siSphererIndexBuffer );
 		
 		glEnable( GL_DEPTH_TEST );
 		glEnable( GL_STENCIL_TEST );
@@ -693,7 +770,7 @@ static void drawLightModel( void )
 		glStencilOpSeparate( GL_FRONT, GL_KEEP, GL_DECR_WRAP, GL_KEEP );
 
 		// render light into stencil
-		glDrawElements( GL_TRIANGLES, siNumCylinderTris, GL_UNSIGNED_INT, 0 );
+		glDrawElements( GL_TRIANGLES, siNumSphereTris, GL_UNSIGNED_INT, 0 );
 		
 		// render light color
 		{
@@ -719,10 +796,6 @@ static void drawLightModel( void )
 			WTFASSERT2( iLightAttenColor >= 0, "invalid semantic lightColor" );
 			glUniform4f( iLightAttenColor, saLightColor[i].fX, saLightColor[i].fY, saLightColor[i].fZ, saLightColor[i].fW );
 
-			GLint iRadius = glGetUniformLocation( iLightAttenShader, "fRadius" );
-			//WTFASSERT2( iRadius >= 0, "invalid semantic fRadius" );
-			glUniform1f( iRadius, gfLightRadius );
-
 			GLint iLightAttenPos = glGetUniformLocation( iLightAttenShader, "lightPos" );
 			//WTFASSERT2( iLightAttenPos >= 0, "invalid semantic lightPos" );
 			glUniform4f( iLightAttenPos, saLightPos[i].fX, saLightPos[i].fY, saLightPos[i].fZ, saLightPos[i].fW );
@@ -743,12 +816,12 @@ static void drawLightModel( void )
 			}
 
 			// bind vbo
-			glBindBuffer( GL_ARRAY_BUFFER, siCylinderBuffer );
+			glBindBuffer( GL_ARRAY_BUFFER, siSphereBuffer );
 			glEnableVertexAttribArray( iPos );
-			glVertexAttribPointer( iPos, 4, GL_FLOAT, GL_FALSE, 0, NULL );
-			glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, siCylinderIndexBuffer );
+			glVertexAttribPointer( iPos, 4, GL_FLOAT, GL_FALSE, sizeof( tInstanceVertex ), NULL );
+			glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, siSphererIndexBuffer );
 
-			glDrawElements( GL_TRIANGLES, siNumCylinderTris, GL_UNSIGNED_INT, 0 );
+			glDrawElements( GL_TRIANGLES, siNumSphereTris, GL_UNSIGNED_INT, 0 );
 
 			glColorMask( GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE );
 		}

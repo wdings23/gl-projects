@@ -42,6 +42,6 @@ void main( void )
 	vec3 totalColor = color.xyz * fDP * color.a + ambientLight.xyz * color.a + lightColor.xyz;
 	
 	//gl_FragColor.xyz = ( color.xyz * fDP * ambientOcclusionColor.xyz + ambientLight.xyz ) + lightColor.xyz; //vec4( totalColor, 1.0 );
-	gl_FragColor.xyz = color.xyz * ambientOcclusionColor.xyz;
+	gl_FragColor.xyz = color.xyz * ambientOcclusionColor.xyz + lightColor.xyz;
 	gl_FragColor.w = color.w;
 }

@@ -1,20 +1,15 @@
 uniform sampler2D posTex;
 
-uniform float fRadius;
-
 varying vec4 vColor;
 varying vec2 vTexCoord;
 varying vec4 vLightPos;
+varying vec4 vPosition;
 
 void main( void )
 {
-	vec4 position = texture2D( posTex, vTexCoord );
-	
-	vec3 diff = position.xyz - vLightPos.xyz;
-	float fDP = dot( diff, diff );
-	float fPct = clamp( 1.0 - ( sqrt( fDP * fDP ) / fRadius ), 0.0, 1.0 );
-	
-	gl_FragColor.xyz = vColor.xyz; // * fPct;
-	gl_FragColor.w = vColor.w;
-	//gl_FragColor = vec4( vTexCoord.x, vTexCoord.y, 0.0, 1.0 );
+	float fDP = dot( vPosition.xy, vPosition.xy );
+	float fPct = sqrt( fDP * fDP );
+
+	gl_FragColor.xyz = vColor;
+	gl_FragColor.w = ( 1.0 - fPct ) * 0.5;
 }

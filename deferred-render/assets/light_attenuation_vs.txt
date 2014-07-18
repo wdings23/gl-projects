@@ -4,7 +4,6 @@ uniform mat4 view_matrix;
 uniform mat4 projection_matrix;
 
 uniform vec4 lightColor;
-//uniform float fRadius;
 uniform vec4 lightPos;
 
 varying vec4 vColor;
@@ -15,8 +14,8 @@ varying vec4 vLightPos;
 void main( void )
 {
 	vColor = lightColor;
+	
 	vPosition = position;
-	vLightPos = lightPos;
 	
 	vec4 eyeSpacePos = projection_matrix * view_matrix * position;
 	vTexCoord.x = ( eyeSpacePos.x / eyeSpacePos.w ) * 0.5 + 0.5;
