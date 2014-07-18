@@ -1,0 +1,13 @@
+attribute vec4 position;
+attribute vec2 textureUV;
+attribute vec4 color;
+
+varying vec2 texCoord;
+varying vec4 varyingColor;
+
+void main()
+{
+	texCoord = textureUV;
+	varyingColor = color;
+	gl_Position = position;
+}

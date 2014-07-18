@@ -1,0 +1,23 @@
+<programs>
+	<program>
+		<name>noperspective</name>
+		<text>Default</text>
+		<vertex_shader>noperspective_vs.txt</vertex_shader>
+		<fragment_shader>fs.txt</fragment_shader>
+		<texture_0>user</texture_0>
+	</program>
+	<program>
+		<name>grayscale</name>
+		<text>Gray Scale</text>
+		<vertex_shader>noperspective_vs.txt</vertex_shader>
+		<fragment_shader>greyscale_fs.txt</fragment_shader>
+		<texture_0>user</texture_0>
+	</program>
+	<program>
+		<name>blur</name>
+		<text>Blur</text>
+		<vertex_shader>noperspective_vs.txt</vertex_shader>
+		<fragment_shader>blur_fs.txt</fragment_shader>
+		<texture_0>user</texture_0>
+	</program>
+</programs>

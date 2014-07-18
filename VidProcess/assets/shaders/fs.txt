@@ -1,0 +1,12 @@
+precision lowp float;
+uniform sampler2D texture;
+
+varying vec2 texCoord;
+varying vec4 xformPos;
+varying vec4 varyingColor;
+
+void main()
+{
+	vec4 color = texture2D( texture, texCoord ) * varyingColor;
+	gl_FragColor = color;
+}

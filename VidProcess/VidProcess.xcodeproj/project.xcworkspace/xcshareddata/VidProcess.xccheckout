@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>IDESourceControlProjectFavoriteDictionaryKey</key>
+	<false/>
+	<key>IDESourceControlProjectIdentifier</key>
+	<string>ED4639F7-CAD2-475F-A009-74104D18EB49</string>
+	<key>IDESourceControlProjectName</key>
+	<string>VidProcess</string>
+	<key>IDESourceControlProjectOriginsDictionary</key>
+	<dict>
+		<key>98928F70-1C0B-4B4E-A068-5BC5664E3CA8</key>
+		<string>file:///Volumes/shared/projects/svn</string>
+	</dict>
+	<key>IDESourceControlProjectPath</key>
+	<string>VidProcess/VidProcess.xcodeproj/project.xcworkspace</string>
+	<key>IDESourceControlProjectRelativeInstallPathDictionary</key>
+	<dict>
+		<key>98928F70-1C0B-4B4E-A068-5BC5664E3CA8</key>
+		<string>../../..</string>
+	</dict>
+	<key>IDESourceControlProjectRepositoryRootDictionary</key>
+	<dict>
+		<key>98928F70-1C0B-4B4E-A068-5BC5664E3CA8</key>
+		<string>file:///Volumes/shared/projects/svn</string>
+	</dict>
+	<key>IDESourceControlProjectURL</key>
+	<string>file:///Volumes/shared/projects/svn/VidProcess/VidProcess.xcodeproj</string>
+	<key>IDESourceControlProjectVersion</key>
+	<integer>110</integer>
+	<key>IDESourceControlProjectWCCIdentifier</key>
+	<string>98928F70-1C0B-4B4E-A068-5BC5664E3CA8</string>
+	<key>IDESourceControlProjectWCConfigurations</key>
+	<array>
+		<dict>
+			<key>IDESourceControlRepositoryExtensionIdentifierKey</key>
+			<string>public.vcs.subversion</string>
+			<key>IDESourceControlWCCIdentifierKey</key>
+			<string>98928F70-1C0B-4B4E-A068-5BC5664E3CA8</string>
+			<key>IDESourceControlWCCName</key>
+			<string>Projects</string>
+		</dict>
+	</array>
+</dict>
+</plist>

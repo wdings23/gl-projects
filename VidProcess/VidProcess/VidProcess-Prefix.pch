@@ -1,0 +1,47 @@
+//
+//  Prefix header
+//
+//  The contents of this file are implicitly included at the beginning of every source file.
+//
+
+#import <Availability.h>
+
+#ifndef __IPHONE_5_0
+#warning "This project uses features only available in iOS SDK 5.0 and later."
+#endif
+
+#ifdef __OBJC__
+    #import <UIKit/UIKit.h>
+    #import <Foundation/Foundation.h>
+#endif
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include <assert.h>
+#include <string.h>
+#include <unistd.h>
+#include <OpenGLES/ES2/gl.h>
+#include <OpenGLES/ES2/glext.h>
+
+#include "wtfassert.h"
+
+
+
+#define IOS
+
+
+#if defined( DEBUG )
+#define OUTPUT( ... ) printf( __VA_ARGS__ )
+#else
+#define OUTPUT( ... )
+#endif // DEBUG
+
+#define MALLOC( X ) malloc( X )
+#define FREE( X ) free( X )
+#define REALLOC( X, Y ) realloc( X, Y ); OUTPUT( "REALLOC %s TO %s\n", #X, #Y );
+#define PI 3.14159f
+#define UI_USE_BATCH 1
+#define USE_VBO 1
+#define SCREEN_WIDTH 320
+#define SCREEN_HEIGHT 480
