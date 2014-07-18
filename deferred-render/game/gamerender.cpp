@@ -756,7 +756,7 @@ static void drawLightModel( void )
 		// bind vbo
 		glBindBuffer( GL_ARRAY_BUFFER, siSphereBuffer );
 		glEnableVertexAttribArray( iPos );
-		glVertexAttribPointer( iPos, 4, GL_FLOAT, GL_FALSE, 0, NULL );
+		glVertexAttribPointer( iPos, 4, GL_FLOAT, GL_FALSE, sizeof( tInstanceVertex ), NULL );
 		glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, siSphererIndexBuffer );
 		
 		glEnable( GL_DEPTH_TEST );
@@ -1041,7 +1041,7 @@ void CGameRender::draw( float fDT )
 	glClear( GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT );
 	drawInstances( mpCamera, siDeferredFBO, iInstanceShader );
 	glBindFramebuffer( GL_DRAW_FRAMEBUFFER, 0 );
-
+	
 	drawLightModel();
 	drawDeferredScene();
 	
