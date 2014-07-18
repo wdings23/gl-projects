@@ -1,5 +1,5 @@
 #include "tga.h"
-#include "filepathutil.h"
+//#include "filepathutil.h"
 #include <memory.h>
 #include <stdio.h>
 #include <stdlib.h>

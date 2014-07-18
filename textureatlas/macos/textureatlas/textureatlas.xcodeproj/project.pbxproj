@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		259993261931477D00AE675A /* lodepng.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 259993231931477D00AE675A /* lodepng.cpp */; };
 		259993271931477D00AE675A /* textureatlas.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 259993251931477D00AE675A /* textureatlas.cpp */; };
+		25ABFBFB1978D4FF0032586B /* tga.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 25ABFBF91978D4FF0032586B /* tga.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -28,6 +29,8 @@
 		259993231931477D00AE675A /* lodepng.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = lodepng.cpp; path = ../../../textureatlas/lodepng.cpp; sourceTree = "<group>"; };
 		259993241931477D00AE675A /* lodepng.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = lodepng.h; path = ../../../textureatlas/lodepng.h; sourceTree = "<group>"; };
 		259993251931477D00AE675A /* textureatlas.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = textureatlas.cpp; path = ../../../textureatlas/textureatlas.cpp; sourceTree = "<group>"; };
+		25ABFBF91978D4FF0032586B /* tga.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = tga.cpp; path = ../../../textureatlas/tga.cpp; sourceTree = "<group>"; };
+		25ABFBFA1978D4FF0032586B /* tga.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = tga.h; path = ../../../textureatlas/tga.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -60,6 +63,8 @@
 		259993191931475400AE675A /* textureatlas */ = {
 			isa = PBXGroup;
 			children = (
+				25ABFBF91978D4FF0032586B /* tga.cpp */,
+				25ABFBFA1978D4FF0032586B /* tga.h */,
 				259993231931477D00AE675A /* lodepng.cpp */,
 				259993241931477D00AE675A /* lodepng.h */,
 				259993251931477D00AE675A /* textureatlas.cpp */,
@@ -118,6 +123,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				25ABFBFB1978D4FF0032586B /* tga.cpp in Sources */,
 				259993261931477D00AE675A /* lodepng.cpp in Sources */,
 				259993271931477D00AE675A /* textureatlas.cpp in Sources */,
 			);
@@ -229,6 +235,7 @@
 				259993221931475400AE675A /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
