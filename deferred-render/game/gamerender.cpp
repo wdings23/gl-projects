@@ -42,6 +42,9 @@ static GLuint siLightTexture;
 static GLuint siLightDepthTexture;
 static GLuint siLightStencilBuffer;
 
+static GLuint siAmbientOcclusionFBO;
+static GLuint siAmbientOcclusionTexture;
+
 static GLuint siCylinderBuffer;
 static GLuint siCylinderIndexBuffer;
 
@@ -54,7 +57,7 @@ static int siNumCylinderTris;
 static int siNumCubes = 100000;
 static CCamera const* spCamera;
 
-const float gfLightRadius = 5.0f;
+const float gfLightRadius = 10.0f;
 
 /*
 **
@@ -373,7 +376,7 @@ static void initInstancing( void )
 
 				float fX = (float)( iX - (int)( iWidth / 2 ) ) * fScaling;
 				float fY = (float)( (int)( iHeight / 2 ) - iY ) * fScaling;
-				float fZ = 2.0f - (float)( rand() % 2 ) * 0.15f;
+				float fZ = 0.0f - (float)( rand() % 2 ) * 0.25f;
 
 				aInstanceInfo[iIndex].mColor.fX = fRed;
 				aInstanceInfo[iIndex].mColor.fY = fGreen;
@@ -494,6 +497,17 @@ static void initInstancing( void )
 		
 		glDrawBuffers( 1, aBuffers );
 
+		// fbo for ambient occlusion
+		glGenFramebuffers( 1, &siAmbientOcclusionFBO );
+		glBindFramebuffer( GL_DRAW_FRAMEBUFFER, siAmbientOcclusionFBO );
+
+		glGenTextures( 1, &siAmbientOcclusionTexture );
+		glBindTexture( GL_TEXTURE_2D, siAmbientOcclusionTexture );
+		glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA32F, iFBWidth, iFBHeight, 0, GL_RGBA, GL_FLOAT, NULL );
+		glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, siAmbientOcclusionTexture, 0);
+
+		glDrawBuffers( 1, aBuffers );
+		
 		glBindFramebuffer( GL_DRAW_FRAMEBUFFER, 0 );
 		glBindRenderbuffer( GL_RENDERBUFFER, 0 );
 	}
@@ -610,8 +624,8 @@ static void drawLightModel( void )
 	static tVector4 saLightPos[4] = 
 	{
 		{ 0.0f, 0.0f, 0.0f, 1.0f },
-		{ -20.0f, 0.0f, 25.0f, 1.0f },
-		{ 10.0f, -5.0f, 20.0f, 1.0f },
+		{ -20.0f, 0.0f, 1.0f, 1.0f },
+		{ 10.0f, -5.0f, -1.0f, 1.0f },
 		{ -10.0f, 5.0f, 10.0f, 1.0f },
 	};
 
@@ -659,6 +673,7 @@ static void drawLightModel( void )
 		
 		GLint iPos = glGetAttribLocation( iLightShader, "position" ); 
 		
+//glDisable( GL_CULL_FACE );
 //glColorMask( GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE );
 
 		// bind vbo
@@ -739,7 +754,7 @@ static void drawLightModel( void )
 		}
 
 	}	// for i = 0 to num lights
-	
+
 	glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
 	//glDisable( GL_BLEND );
 	
@@ -756,7 +771,7 @@ static void drawLightModel( void )
 	glBindBuffer( GL_ARRAY_BUFFER, 0 );
 	glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );
 	glBindFramebuffer( GL_DRAW_FRAMEBUFFER, 0 );
-	
+
 }
 
 /*
@@ -764,52 +779,13 @@ static void drawLightModel( void )
 */
 static void drawDeferredScene( void )
 {
-	//int iShader = CShaderManager::instance()->getShader( "deferred_shading" );
-	int iShader = CShaderManager::instance()->getShader( "ambient_occlusion" );
-	WTFASSERT2( iShader > 0, "invalid shader" );
-
-	glUseProgram( iShader );
-
-	// textures
-	GLuint iAlbedoTex = glGetUniformLocation( iShader, "albedoTex" );
-	glActiveTexture( GL_TEXTURE0 );
-	glUniform1i( iAlbedoTex, 0 );
-	glBindTexture( GL_TEXTURE_2D, siAlbedoTexture );
-
-	GLuint iNormalTex = glGetUniformLocation( iShader, "normalTex" );
-	glActiveTexture( GL_TEXTURE1 );
-	glUniform1i( iNormalTex, 1 );
-	glBindTexture( GL_TEXTURE_2D, siNormalTexture );
-
-	GLuint iLightTex = glGetUniformLocation( iShader, "lightTex" );
-	glActiveTexture( GL_TEXTURE2 );
-	glUniform1i( iLightTex, 2 );
-	glBindTexture( GL_TEXTURE_2D, siLightTexture );
-
-	GLuint iDepthTex = glGetUniformLocation( iShader, "depthTex" );
-	glActiveTexture( GL_TEXTURE3 );
-	glUniform1i( iDepthTex, 3 );
-	glBindTexture( GL_TEXTURE_2D, siDepthTexture );
-
-	GLuint iPosTex = glGetUniformLocation( iShader, "posTex" );
-	glActiveTexture( GL_TEXTURE4 );
-	glUniform1i( iPosTex, 4 );
-	glBindTexture( GL_TEXTURE_2D, siPositionTexture );
-
-	tTexture* pRandomTexture = CTextureManager::instance()->getTexture( "random_dir.tga" );
-
-	GLuint iRandomDirTex = glGetUniformLocation( iShader, "randomDirTex" );
-	glActiveTexture( GL_TEXTURE5 );
-	glUniform1i( iRandomDirTex, 5 );
-	glBindTexture( GL_TEXTURE_2D, pRandomTexture->miID );
-
 	tVector4 aScreenVerts[] =
-    {
+	{
 		{ -1.0f, -1.0f, 0.0f, 1.0f },
 		{ 1.0f, -1.0f, 0.0f, 1.0f },
 		{ -1.0f, 1.0f, 0.0f, 1.0f },
 		{ 1.0f, 1.0f, 0.0f, 1.0f },
-    };
+	};
     
 	tVector2 aUV[] = 
 	{
@@ -819,18 +795,117 @@ static void drawDeferredScene( void )
 		{ 1.0f, 1.0f }
 	};
 
-	//glDisable( GL_CULL_FACE );
+	// create ambient occlusion texture 
+	{
+		glBindFramebuffer( GL_DRAW_FRAMEBUFFER, siAmbientOcclusionFBO );
 
-	int iPosition = glGetAttribLocation( iShader, "position" );
-	int iUV = glGetAttribLocation( iShader, "uv" );
+		glClearColor( 0.0f, 0.0f, 0.0f, 0.0f );
+		glClear( GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
 
-	glVertexAttribPointer( iPosition, 4, GL_FLOAT, GL_FALSE, 0, aScreenVerts );
-    glEnableVertexAttribArray( 0 );
+		//int iShader = CShaderManager::instance()->getShader( "deferred_shading" );
+		int iShader = CShaderManager::instance()->getShader( "ambient_occlusion" );
+		WTFASSERT2( iShader > 0, "invalid shader" );
+
+		glUseProgram( iShader );
+
+		// textures
+		GLuint iAlbedoTex = glGetUniformLocation( iShader, "albedoTex" );
+		glActiveTexture( GL_TEXTURE0 );
+		glUniform1i( iAlbedoTex, 0 );
+		glBindTexture( GL_TEXTURE_2D, siAlbedoTexture );
+
+		GLuint iNormalTex = glGetUniformLocation( iShader, "normalTex" );
+		glActiveTexture( GL_TEXTURE1 );
+		glUniform1i( iNormalTex, 1 );
+		glBindTexture( GL_TEXTURE_2D, siNormalTexture );
+
+		GLuint iLightTex = glGetUniformLocation( iShader, "lightTex" );
+		glActiveTexture( GL_TEXTURE2 );
+		glUniform1i( iLightTex, 2 );
+		glBindTexture( GL_TEXTURE_2D, siLightTexture );
+
+		GLuint iDepthTex = glGetUniformLocation( iShader, "depthTex" );
+		glActiveTexture( GL_TEXTURE3 );
+		glUniform1i( iDepthTex, 3 );
+		glBindTexture( GL_TEXTURE_2D, siDepthTexture );
+
+		GLuint iPosTex = glGetUniformLocation( iShader, "posTex" );
+		glActiveTexture( GL_TEXTURE4 );
+		glUniform1i( iPosTex, 4 );
+		glBindTexture( GL_TEXTURE_2D, siPositionTexture );
+
+		tTexture* pRandomTexture = CTextureManager::instance()->getTexture( "random_dir.tga" );
+
+		GLuint iRandomDirTex = glGetUniformLocation( iShader, "randomDirTex" );
+		glActiveTexture( GL_TEXTURE5 );
+		glUniform1i( iRandomDirTex, 5 );
+		glBindTexture( GL_TEXTURE_2D, pRandomTexture->miID );
+
+		//glDisable( GL_CULL_FACE );
+
+		int iPosition = glGetAttribLocation( iShader, "position" );
+		int iUV = glGetAttribLocation( iShader, "uv" );
+
+		glVertexAttribPointer( iPosition, 4, GL_FLOAT, GL_FALSE, 0, aScreenVerts );
+		glEnableVertexAttribArray( 0 );
     
-    glVertexAttribPointer( iUV, 2, GL_FLOAT, GL_FALSE, 0, aUV );
-    glEnableVertexAttribArray( 1 );
+		glVertexAttribPointer( iUV, 2, GL_FLOAT, GL_FALSE, 0, aUV );
+		glEnableVertexAttribArray( 1 );
     
-    glDrawArrays( GL_TRIANGLE_STRIP, 0, 4 );
+		glDrawArrays( GL_TRIANGLE_STRIP, 0, 4 );
+
+		glBindFramebuffer( GL_DRAW_FRAMEBUFFER, 0 );
+	}
+
+	// draw final scene
+	{
+		int iShader = CShaderManager::instance()->getShader( "deferred_shading" );
+		WTFASSERT2( iShader > 0, "invalid shader" );
+
+		glUseProgram( iShader );
+	
+		// textures
+		GLuint iAlbedoTex = glGetUniformLocation( iShader, "albedoTex" );
+		glActiveTexture( GL_TEXTURE0 );
+		glUniform1i( iAlbedoTex, 0 );
+		glBindTexture( GL_TEXTURE_2D, siAlbedoTexture );
+
+		GLuint iNormalTex = glGetUniformLocation( iShader, "normalTex" );
+		glActiveTexture( GL_TEXTURE1 );
+		glUniform1i( iNormalTex, 1 );
+		glBindTexture( GL_TEXTURE_2D, siNormalTexture );
+
+		GLuint iLightTex = glGetUniformLocation( iShader, "lightTex" );
+		glActiveTexture( GL_TEXTURE2 );
+		glUniform1i( iLightTex, 2 );
+		glBindTexture( GL_TEXTURE_2D, siLightTexture );
+
+		GLuint iDepthTex = glGetUniformLocation( iShader, "depthTex" );
+		glActiveTexture( GL_TEXTURE3 );
+		glUniform1i( iDepthTex, 3 );
+		glBindTexture( GL_TEXTURE_2D, siDepthTexture );
+
+		GLuint iPosTex = glGetUniformLocation( iShader, "posTex" );
+		glActiveTexture( GL_TEXTURE4 );
+		glUniform1i( iPosTex, 4 );
+		glBindTexture( GL_TEXTURE_2D, siPositionTexture );
+
+		GLuint iAmbientOcclusionTex = glGetUniformLocation( iShader, "ambientOcclusionTex" );
+		glActiveTexture( GL_TEXTURE5 );
+		glUniform1i( iAmbientOcclusionTex, 5 );
+		glBindTexture( GL_TEXTURE_2D, siAmbientOcclusionTexture );
+
+		int iPosition = glGetAttribLocation( iShader, "position" );
+		int iUV = glGetAttribLocation( iShader, "uv" );
+
+		glVertexAttribPointer( iPosition, 4, GL_FLOAT, GL_FALSE, 0, aScreenVerts );
+		glEnableVertexAttribArray( 0 );
+    
+		glVertexAttribPointer( iUV, 2, GL_FLOAT, GL_FALSE, 0, aUV );
+		glEnableVertexAttribArray( 1 );
+    
+		glDrawArrays( GL_TRIANGLE_STRIP, 0, 4 );
+	}
 
 	//glEnable( GL_CULL_FACE );
 }

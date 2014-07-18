@@ -14,7 +14,7 @@ const float gfRandomTextureSize = 64.0;
 const float gfSampleDistanceScale = 10.0;
 const float gfBias = -0.2;
 const float gfSampleRadius = 0.2;
-const float gfAmbientOcclusionIntensity = 6.0;
+const float gfAmbientOcclusionIntensity = 5.0;
 
 const vec2 gaDirs[4] = vec2[4]( vec2( 1.0, 0.0 ), vec2( -1.0, 0.0 ), vec2( 0.0, 1.0 ), vec2( 0.0, -1.0 ) );
 
@@ -83,6 +83,6 @@ void main( void )
 
 	fAmbientOcclusionContrib /= 16.0;
 	
-	gl_FragColor.xyz = ( 1.0 - fAmbientOcclusionContrib ) * albedoColor.xyz;
+	gl_FragColor.xyz = ( 1.0 - fAmbientOcclusionContrib );
 	gl_FragColor.w = albedoColor.w;
 }

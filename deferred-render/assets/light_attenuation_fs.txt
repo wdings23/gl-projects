@@ -14,7 +14,7 @@ void main( void )
 	float fDP = dot( diff, diff );
 	float fPct = clamp( 1.0 - ( sqrt( fDP * fDP ) / fRadius ), 0.0, 1.0 );
 	
-	gl_FragColor.xyz = vColor.xyz * fPct;
+	gl_FragColor.xyz = vColor.xyz; // * fPct;
 	gl_FragColor.w = vColor.w;
 	//gl_FragColor = vec4( vTexCoord.x, vTexCoord.y, 0.0, 1.0 );
 }
