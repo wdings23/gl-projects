@@ -520,6 +520,9 @@ static void initInstancing( void )
 
 	glBindBuffer( GL_ARRAY_BUFFER, 0 );
 	glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );	
+
+	// random direction texture
+	CTextureManager::instance()->registerTexture( "random_dir.tga" );
 }
 
 /*
@@ -761,7 +764,8 @@ static void drawLightModel( void )
 */
 static void drawDeferredScene( void )
 {
-	int iShader = CShaderManager::instance()->getShader( "deferred_shading" );
+	//int iShader = CShaderManager::instance()->getShader( "deferred_shading" );
+	int iShader = CShaderManager::instance()->getShader( "ambient_occlusion" );
 	WTFASSERT2( iShader > 0, "invalid shader" );
 
 	glUseProgram( iShader );
@@ -791,6 +795,13 @@ static void drawDeferredScene( void )
 	glActiveTexture( GL_TEXTURE4 );
 	glUniform1i( iPosTex, 4 );
 	glBindTexture( GL_TEXTURE_2D, siPositionTexture );
+
+	tTexture* pRandomTexture = CTextureManager::instance()->getTexture( "random_dir.tga" );
+
+	GLuint iRandomDirTex = glGetUniformLocation( iShader, "randomDirTex" );
+	glActiveTexture( GL_TEXTURE5 );
+	glUniform1i( iRandomDirTex, 5 );
+	glBindTexture( GL_TEXTURE_2D, pRandomTexture->miID );
 
 	tVector4 aScreenVerts[] =
     {
@@ -878,6 +889,7 @@ void CGameRender::draw( float fDT )
 	GLuint iInstanceShader = CShaderManager::instance()->getShader( "instance_deferred" );
 	WTFASSERT2( iInstanceShader > 0, "invalid shader" );
 	glBindFramebuffer( GL_DRAW_FRAMEBUFFER, siDeferredFBO );
+	glClearColor( 0.0f, 0.0f, 0.0f, 0.0f );
 	glClear( GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT );
 	drawInstances( mpCamera, siDeferredFBO, iInstanceShader );
 	glBindFramebuffer( GL_DRAW_FRAMEBUFFER, 0 );

@@ -16,7 +16,9 @@ void main( void )
 	vColor = color;
 	vPosition.xyz = position.xyz * scaling.xyz + translation.xyz;
 	vPosition.w = 1.0;	
+	vPosition = view_matrix * vPosition;
+	
 	vNormal = normal;
 	
-	gl_Position = projection_matrix * view_matrix * vPosition;
+	gl_Position = projection_matrix * vPosition;
 }

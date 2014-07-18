@@ -93,7 +93,7 @@ static void initGL( char* argv[] )
 	}
 
 	setFileDirectories( szDir,
-						"C:\\Users\\Dingwings\\Documents\\Projects\\assets");
+						"C:\\Users\\Dingwings\\Documents\\Projects\\deferred-render\\assets");
 
 	renderSetScreenWidth( WINDOW_WIDTH );
 	renderSetScreenHeight( WINDOWN_HEIGHT );

@@ -1,0 +1,87 @@
+uniform sampler2D albedoTex;
+uniform sampler2D normalTex;
+uniform sampler2D lightTex;
+uniform sampler2D posTex;
+uniform sampler2D depthTex;
+uniform sampler2D randomDirTex;
+
+varying vec2 vTexCoord;
+varying vec2 vEyeSpacePos;
+
+const float gfScreenWidth = 640.0;
+const float gfScreenHeight = 960.0; 
+const float gfRandomTextureSize = 64.0;
+const float gfSampleDistanceScale = 15.0;
+const float gfBias = 0.1;
+const float gfSampleRadius = 0.25;
+const float gfAmbientOcclusionIntensity = 5.0;
+
+const vec2 gaDirs[4] = vec2[4]( vec2( 1.0, 0.0 ), vec2( -1.0, 0.0 ), vec2( 0.0, 1.0 ), vec2( 0.0, -1.0 ) );
+
+/*
+**
+*/
+vec2 getRandomDirectionFromOrigin( vec2 uv )
+{
+	vec2 newUV = vec2( ( gfScreenWidth * uv.x ) / gfRandomTextureSize,
+					   ( gfScreenHeight * uv.y ) / gfRandomTextureSize );
+
+	return normalize( texture2D( randomDirTex, newUV ).xy * 2.0 - 1.0 );
+}
+
+/*
+**
+*/
+float getAmbientOcclusionValue( vec2 uv, vec2 fromOriginUVOffset, vec3 originPos, vec3 normal )
+{
+	vec2 rayUV = uv + fromOriginUVOffset;					// ray uv with distance from origin uv
+	vec3 rayEndPos = texture2D( posTex, rayUV ).xyz;		// ray's end position 
+
+	vec3 diff = rayEndPos - originPos;						// ray's direction from origin
+	vec3 direction = normalize( diff );						// direction from origin to the end position of the ray
+	float fDistance = length( diff ) * gfSampleDistanceScale;
+
+	float fNormalDotDirection = dot( normal, direction );
+
+	// the angle from origin to the ray's destination ( > 0 == in front )
+	return max( 0.0, fNormalDotDirection + gfBias ) * ( 1.0 / ( 1.0 + fDistance ) ) * gfAmbientOcclusionIntensity;	
+}
+
+/*
+**
+*/
+void main( void )
+{
+	vec4 albedoColor = texture2D( albedoTex, vTexCoord );
+
+	// position, normal, and random direction to shoot the ray for this current position
+	vec3 position = texture2D( posTex, vTexCoord ).xyz;
+	vec3 normal = texture2D( normalTex, vTexCoord ).xyz;
+	vec2 randomDir = getRandomDirectionFromOrigin( vTexCoord );
+
+	// radius for samples to draw from
+	float fRadius = gfSampleRadius / position.z;
+
+	// add up all the contribution ambient occlusion terms
+	float fAmbientOcclusionContrib = 0;
+	const int iNumIterations = 4;
+	for( int i = 0; i < iNumIterations; i++ )
+	{
+		// ray to shoot
+		vec2 coord0 = reflect( gaDirs[i], randomDir ) * fRadius;
+
+		// rotate coord0 about z-axis
+		vec2 coord1 = vec2( coord0.x * 0.707 - coord0.y * 0.707,
+							coord0.x * 0.707 + coord0.y * 0.707 );
+
+		fAmbientOcclusionContrib += getAmbientOcclusionValue( vTexCoord, coord0 * 0.25, position, normal );
+		fAmbientOcclusionContrib += getAmbientOcclusionValue( vTexCoord, coord1 * 0.5, position, normal );
+		fAmbientOcclusionContrib += getAmbientOcclusionValue( vTexCoord, coord0 * 0.75, position, normal );
+		fAmbientOcclusionContrib += getAmbientOcclusionValue( vTexCoord, coord1, position, normal );
+	}
+
+	fAmbientOcclusionContrib /= 16.0;
+	
+	gl_FragColor.xyz = vec3( 1.0, 1.0, 1.0 ) * ( 1.0 - fAmbientOcclusionContrib ) * albedoColor.xyz;
+	gl_FragColor.w = albedoColor.w;
+}

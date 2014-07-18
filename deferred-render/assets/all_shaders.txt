@@ -70,5 +70,11 @@
 		<vertex_shader>light_attenuation_vs.txt</vertex_shader>
 		<fragment_shader>light_attenuation_fs.txt</fragment_shader>
 	</shader>
+
+	<shader>
+		<name>ambient_occlusion</name>
+		<vertex_shader>deferred_vs.txt</vertex_shader>
+		<fragment_shader>deferred_ao_fs.txt</fragment_shader>
+	</shader>
 	
 </shaders>
