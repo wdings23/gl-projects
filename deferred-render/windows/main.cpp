@@ -92,8 +92,25 @@ static void initGL( char* argv[] )
 		}
 	}
 
-	setFileDirectories( szDir,
-						"C:\\Users\\Dingwings\\Documents\\Projects\\deferred-render\\assets");
+#if defined( _WIN32 )
+	wchar_t buffer[MAX_PATH];
+    GetModuleFileName( NULL, buffer, MAX_PATH );
+
+	wchar_t* pStartWindows = wcsstr( buffer, L"windows" );
+	wchar_t dir[MAX_PATH];
+	memset( dir, 0, sizeof( dir ) );
+	memcpy( dir, buffer, (unsigned long)pStartWindows - (unsigned long)buffer );
+
+	char szBuffer[MAX_PATH];
+	wcstombs( szBuffer, dir, sizeof( szDir ) );
+	snprintf( szDir, sizeof( szDir ), "%sassets", szBuffer );
+
+#endif // _WIN32
+
+	char szWriteDir[256];
+	snprintf( szWriteDir, sizeof( szWriteDir ), "%s\\save", szDir );
+
+	setFileDirectories( szDir, szWriteDir);
 
 	renderSetScreenWidth( WINDOW_WIDTH );
 	renderSetScreenHeight( WINDOWN_HEIGHT );
