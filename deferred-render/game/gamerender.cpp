@@ -283,8 +283,6 @@ static void createSphere( void )
 	glGenBuffers( 1, &siSphereBuffer );
 	glBindBuffer( GL_ARRAY_BUFFER, siSphereBuffer );
 	glBufferData( GL_ARRAY_BUFFER, sizeof( tInstanceVertex ) * iNumFaces * 3, aVertices, GL_STATIC_DRAW );
-//	glEnableVertexAttribArray( 0 );
-//	glVertexAttribPointer( 0, 4, GL_FLOAT, GL_FALSE, sizeof( tInstanceVertex ), NULL );
 
 	// indices
 	glGenBuffers( 1, &siSphererIndexBuffer );
@@ -476,21 +474,9 @@ static void initInstancing( void )
     int iShader = CShaderManager::instance()->getShader( "instance_deferred" );
     glUseProgram( iShader );
     
-//	int iPosAttrib = glGetAttribLocation( iShader, "position" );
-//	int iNormAttrib = glGetAttribLocation( iShader, "normal" );
-//	int iColorAttrib = glGetAttribLocation( iShader, "color" );
-//	int iScaleAttrib = glGetAttribLocation( iShader, "scaling" );
-//	int iTransAttrib = glGetAttribLocation( iShader, "translation" );
-	
 	glGenBuffers( 1, &siInstanceVBO );
 	glBindBuffer( GL_ARRAY_BUFFER, siInstanceVBO );
 	glBufferData( GL_ARRAY_BUFFER, sizeof( tInstanceVertex ) * iNumIndices, aVerts, GL_STATIC_DRAW );
-	
-//	glEnableVertexAttribArray( iPosAttrib );
-//	glVertexAttribPointer( iPosAttrib, 4, GL_FLOAT, GL_FALSE, sizeof( tInstanceVertex ), NULL );
-//	
-//	glEnableVertexAttribArray( iNormAttrib );
-//	glVertexAttribPointer( iNormAttrib, 4, GL_FLOAT, GL_FALSE, sizeof( tInstanceVertex ), (void *)sizeof( tVector2 ) );
 	
 	// indices
 	glGenBuffers( 1, &siIndexBuffer );
@@ -504,25 +490,6 @@ static void initInstancing( void )
 	glBindBuffer( GL_ARRAY_BUFFER, siInstanceInfoVBO );
 	glBufferData( GL_ARRAY_BUFFER, sizeof( tInstanceInfo ) * siNumCubes, aInstanceInfo, GL_DYNAMIC_DRAW );
 	
-//	glEnableVertexAttribArray( iTransAttrib );
-//	glVertexAttribPointer( iTransAttrib, 4, GL_FLOAT, GL_FALSE, sizeof( tInstanceInfo ), NULL );
-//	glVertexAttribDivisor( iTransAttrib, 1 );
-//
-//	glEnableVertexAttribArray( iScaleAttrib );
-//	glVertexAttribPointer( iScaleAttrib, 4, GL_FLOAT, GL_FALSE, sizeof( tInstanceInfo ), (void *)sizeof( tVector4 ) );
-//	glVertexAttribDivisor( iScaleAttrib, 1 );
-//
-//	glEnableVertexAttribArray( iColorAttrib );
-//	glVertexAttribPointer( iColorAttrib, 4, GL_FLOAT, GL_FALSE, sizeof( tInstanceInfo ), (void *)( sizeof( tVector4 ) + sizeof( tVector4 ) ) );
-//	glVertexAttribDivisor( iColorAttrib, 1 );
-//
-//    glDisableVertexAttribArray( iColorAttrib );
-//    glDisableVertexAttribArray( iScaleAttrib );
-//    glDisableVertexAttribArray( iTransAttrib );
-//    
-//    glDisableVertexAttribArray( iNormAttrib );
-//    glDisableVertexAttribArray( iPosAttrib );
-    
 	free( aInstanceInfo );
 
     glUseProgram( 0 );
@@ -1033,8 +1000,6 @@ static void drawDeferredScene( void )
     
 		glDrawArrays( GL_TRIANGLE_STRIP, 0, 4 );
 	}
-
-	//glEnable( GL_CULL_FACE );
 }
 
 /*
