@@ -11,5 +11,5 @@ void main( void )
 	float fPct = sqrt( fDP * fDP );
 
 	gl_FragColor.xyz = vColor.xyz;
-	gl_FragColor.w = ( 1.0 - fPct ) * 0.5;
+	gl_FragColor.w = 0.25f; // ( 1.0 - fPct ) * 0.5;
 }

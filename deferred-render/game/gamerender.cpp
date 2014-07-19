@@ -82,7 +82,7 @@ static int siNumCubes = 100000;
 static CCamera const* spCamera;
 
 static tLightInfo* saLightInfo;
-const int giNumLights = 100;
+const int giNumLights = 2;
 
 /*
 **
@@ -449,7 +449,7 @@ static void initInstancing( void )
 
 				float fX = (float)( iX - (int)( iWidth / 2 ) ) * fScaling;
 				float fY = (float)( (int)( iHeight / 2 ) - iY ) * fScaling;
-				float fZ = 0.0f - (float)( rand() % 4 ) * 0.5f;
+				float fZ = 0.0f - (float)( rand() % 4 ) * 0.25f;
 
 				aInstanceInfo[iIndex].mColor.fX = fRed;
 				aInstanceInfo[iIndex].mColor.fY = fGreen;
@@ -605,9 +605,9 @@ static void initInstancing( void )
 	for( int i = 0; i < giNumLights; i++ )
 	{
 		tLightInfo* pLightInfo = &saLightInfo[i];
-		pLightInfo->mColor.fX = (float)( rand() % iRandRange ) / (float)iRandRange;
-		pLightInfo->mColor.fY = (float)( rand() % iRandRange ) / (float)iRandRange;
-		pLightInfo->mColor.fZ = (float)( rand() % iRandRange ) / (float)iRandRange;
+		pLightInfo->mColor.fX = 1.0f; //(float)( rand() % iRandRange ) / (float)iRandRange;
+		pLightInfo->mColor.fY = 1.0f; //(float)( rand() % iRandRange ) / (float)iRandRange;
+		pLightInfo->mColor.fZ = 0.0f; //(float)( rand() % iRandRange ) / (float)iRandRange;
 		pLightInfo->mColor.fW = 1.0f;
 
 		pLightInfo->mPosition.fX = (float)( rand() % iRandRange ) / 50.0f + 0.0f;
@@ -615,7 +615,7 @@ static void initInstancing( void )
 		pLightInfo->mPosition.fZ = (float)( rand() % iRandRange ) / 500.0f;
 		pLightInfo->mPosition.fW = 1.0f;
 
-		pLightInfo->mfSize = (float)( rand() % iRandRange ) / 200.0f;
+		pLightInfo->mfSize = 10.0f; // (float)( rand() % iRandRange ) / 200.0f;
 		pLightInfo->mfAngle = 0.0f;
 		pLightInfo->mfAngleInc = (float)( rand() % iRandRange ) / ( (float)iRandRange * 10.0f );
 		pLightInfo->mfAngleInc -= (float)iRandRange * 0.5f / ( (float)iRandRange * 10.0f );;
@@ -772,6 +772,7 @@ static void drawLightModel( void )
 		Matrix44Scale( &scaleMatrix, pLight->mfSize, pLight->mfSize, pLight->mfSize );
 		Matrix44Multiply( &translateScaleMatrix, &translateMatrix, &scaleMatrix );
 
+		//Matrix44Multiply( &modelViewMatrix, pViewMatrix, &translateScaleMatrix );
 		Matrix44Multiply( &modelViewMatrix, pViewMatrix, &translateScaleMatrix );
 
 		tMatrix44 viewMatrix, projMatrix;
