@@ -22,6 +22,7 @@ static void renderScene( void );
 #define WINDOWN_HEIGHT 960
 
 static bool sbZooming = false;
+static bool sbTilt = false;
 static float sfLastY = -1.0f;
 
 /*
@@ -189,6 +190,19 @@ static void mouseInput( int iButton, int iState, int iX, int iY )
 			sbZooming = false;
 		}
 	}
+	else if( iButton == GLUT_MIDDLE_BUTTON )
+	{
+		if( iState == GLUT_DOWN )
+		{
+			sfLastY = -1.0f;
+			sbTilt = true;
+		}
+		else if( iState == GLUT_UP )
+		{
+			sfLastY = -1.0f;
+			sbTilt = false;
+		}
+	}
 
 	float fX = (float)iX;
 	float fY = (float)iY;
@@ -274,6 +288,16 @@ static void mouseMotionInput( int iX, int iY )
 		}
 		
 		CGame::instance()->zoomCamera( ( sfLastY - fY ) * 0.01f );
+	}
+	else if( sbTilt )
+	{
+		if( sfLastY < 0.0f )
+		{
+			sfLastY = fY;
+		}
+
+		float fDY = sfLastY - fY;
+		CGame::instance()->tiltCamera( fDY );
 	}
 	else
 	{
