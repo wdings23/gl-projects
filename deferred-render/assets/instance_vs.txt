@@ -12,6 +12,7 @@ attribute vec4 translation;
 
 uniform mat4 view_matrix;
 uniform mat4 projection_matrix;
+uniform mat4 cam_rotation_matrix;
 
 varying vec4 vColor;
 varying vec4 vPosition;
@@ -21,10 +22,10 @@ void main( void )
 {
 	vColor = color;
 	vPosition.xyz = position.xyz * scaling.xyz + translation.xyz;
-	vPosition.w = 1.0;	
-	vPosition = view_matrix * vPosition;
+	vPosition.w = 1.0;
+	//vPosition = view_matrix * vPosition;
 	
-	vNormal = normal;
+	vNormal = /*cam_rotation_matrix * */normal;
 	
-	gl_Position = projection_matrix * vPosition;
+	gl_Position = projection_matrix * view_matrix * vPosition;
 }

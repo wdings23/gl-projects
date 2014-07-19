@@ -4,14 +4,14 @@ uniform sampler2D posTex;
 uniform sampler2D randomDirTex;
 
 varying vec2 vTexCoord;
-varying vec4 vPosition;
+varying vec4 vOrigPosition;
 
 const float gfScreenWidth = 640.0;
 const float gfScreenHeight = 960.0; 
 const float gfRandomTextureSize = 64.0;
-const float gfSampleDistanceScale = 10.0;
+const float gfSampleDistanceScale = 5.0;
 const float gfBias = -0.2;
-const float gfSampleRadius = 0.2;
+const float gfSampleRadius = 0.03;
 const float gfAmbientOcclusionIntensity = 5.0;
 
 //const vec2 gaDirs[4] = vec2[4]( vec2( 1.0, 0.0 ), vec2( -1.0, 0.0 ), vec2( 0.0, 1.0 ), vec2( 0.0, -1.0 ) );
@@ -39,7 +39,7 @@ float getAmbientOcclusionValue( vec2 uv, vec2 fromOriginUVOffset, vec3 originPos
 	vec3 direction = normalize( diff );						// direction from origin to the end position of the ray
 	float fDistance = length( diff ) * gfSampleDistanceScale;
 
-	normal.z *= -1.0;
+	//normal.z *= -1.0;
 	float fNormalDotDirection = dot( normal, direction );
 
 	// the angle from origin to the ray's destination ( > 0 == in front )

@@ -12,20 +12,22 @@ const vec4 lightDir = vec4( 1.0, 1.0, -1.0, 1.0 );
 const vec4 ambientLight = vec4( 0.1, 0.1, 0.1, 1.0 );
 const vec4 hazeColor = vec4( 0.5, 0.5, 0.5, 1.0 );
 
+const float fDTex = 0.005;
+
 void main( void )
 {
 	// blur ambient occlusion texture map
 	vec4 ambientOcclusionTexColor = texture2D( ambientOcclusionTex, vTexCoord + vec2( 0.0, 0.0 ) );
 	vec4 ambientOcclusionColor = vec4( 0.0, 0.0, 0.0, 1.0 ); 
-	ambientOcclusionColor.xyz += texture2D( ambientOcclusionTex, vTexCoord + vec2( 0.01, 0.0 ) ).xyz * 0.075;
-	ambientOcclusionColor.xyz += texture2D( ambientOcclusionTex, vTexCoord + vec2( -0.01, 0.0 ) ).xyz * 0.075;
-	ambientOcclusionColor.xyz += texture2D( ambientOcclusionTex, vTexCoord + vec2( 0.0, 0.01 ) ).xyz * 0.075;
-	ambientOcclusionColor.xyz += texture2D( ambientOcclusionTex, vTexCoord + vec2( 0.0, -0.01 ) ).xyz * 0.075;
+	ambientOcclusionColor.xyz += texture2D( ambientOcclusionTex, vTexCoord + vec2( fDTex, 0.0 ) ).xyz * 0.075;
+	ambientOcclusionColor.xyz += texture2D( ambientOcclusionTex, vTexCoord + vec2( -fDTex, 0.0 ) ).xyz * 0.075;
+	ambientOcclusionColor.xyz += texture2D( ambientOcclusionTex, vTexCoord + vec2( 0.0, fDTex ) ).xyz * 0.075;
+	ambientOcclusionColor.xyz += texture2D( ambientOcclusionTex, vTexCoord + vec2( 0.0, -fDTex ) ).xyz * 0.075;
 
-	ambientOcclusionColor.xyz += texture2D( ambientOcclusionTex, vTexCoord + vec2( 0.01, 0.01 ) ).xyz * 0.075;
-	ambientOcclusionColor.xyz += texture2D( ambientOcclusionTex, vTexCoord + vec2( -0.01, 0.01 ) ).xyz * 0.075;
-	ambientOcclusionColor.xyz += texture2D( ambientOcclusionTex, vTexCoord + vec2( 0.01, -0.01 ) ).xyz * 0.075;
-	ambientOcclusionColor.xyz += texture2D( ambientOcclusionTex, vTexCoord + vec2( -0.01, -0.01 ) ).xyz * 0.075;
+	ambientOcclusionColor.xyz += texture2D( ambientOcclusionTex, vTexCoord + vec2( fDTex, fDTex ) ).xyz * 0.075;
+	ambientOcclusionColor.xyz += texture2D( ambientOcclusionTex, vTexCoord + vec2( -fDTex, fDTex ) ).xyz * 0.075;
+	ambientOcclusionColor.xyz += texture2D( ambientOcclusionTex, vTexCoord + vec2( fDTex, -fDTex ) ).xyz * 0.075;
+	ambientOcclusionColor.xyz += texture2D( ambientOcclusionTex, vTexCoord + vec2( -fDTex, -fDTex ) ).xyz * 0.075;
 
 	ambientOcclusionColor.xyz += ambientOcclusionTexColor.xyz * 0.4;
 	ambientOcclusionColor.w = ambientOcclusionTexColor.w;
@@ -43,5 +45,6 @@ void main( void )
 	
 	//gl_FragColor.xyz = ( color.xyz * fDP * ambientOcclusionColor.xyz + ambientLight.xyz ) + lightColor.xyz; //vec4( totalColor, 1.0 );
 	gl_FragColor.xyz = color.xyz * ambientOcclusionColor.xyz + lightColor.xyz;
+	//gl_FragColor.xyz = ambientOcclusionColor.xyz;
 	gl_FragColor.w = color.w;
 }

@@ -63,6 +63,8 @@ void CCamera::update( int iScreenWidth, int iScreenHeight )
                    &mInvRotMatrix,
                    false );
 	 
+	Matrix44Inverse( &mRotationMatrix, &mInvRotMatrix );
+
 	Matrix44Perspective( &mProjectionMatrix,
                         mfFOV,
                         iScreenWidth,

@@ -638,13 +638,17 @@ static void drawInstances( CCamera const* pCamera, GLuint iFBO, GLuint iShader )
 
 	GLint iViewMatrix = glGetUniformLocation( iShader, "view_matrix" );
 	GLint iProjMatrix = glGetUniformLocation( iShader, "projection_matrix" );
+	GLint iViewRotationMatrix = glGetUniformLocation( iShader, "cam_rotation_matrix" );
 
 	tMatrix44 viewMatrix, projMatrix;
 	Matrix44Transpose( &viewMatrix, pViewMatrix );
 	Matrix44Transpose( &projMatrix, pProjMatrix );
 
+	tMatrix44 const* pCamRotMatrix = pCamera->getRotationMatrix();
+
 	glUniformMatrix4fv( iViewMatrix, 1, GL_FALSE, viewMatrix.afEntries ); 
 	glUniformMatrix4fv( iProjMatrix, 1, GL_FALSE, projMatrix.afEntries ); 
+	glUniformMatrix4fv( iViewRotationMatrix, 1, GL_FALSE, pCamRotMatrix->afEntries );
 
 	int iPosAttrib = glGetAttribLocation( iShader, "position" );
 	int iNormAttrib = glGetAttribLocation( iShader, "normal" );

@@ -83,8 +83,9 @@ public:
 				     tVector4 const* pNearPlane,
 				     tVector4 const* pFarPlane );
 
-	inline const tMatrix44* getOrthographicMatrix( void ) const { return &mOrthographicMatrix; }
-	
+	inline tMatrix44 const* getOrthographicMatrix( void ) const { return &mOrthographicMatrix; }
+	inline tMatrix44 const* getRotationMatrix( void ) const { return &mRotationMatrix; }
+
 	inline const tVector4* getLookDir( void ) const { return &mLookDir; }
 
 	tVector4	mFarCenter;
@@ -120,6 +121,7 @@ protected:
 	tVector4	mUp;
 	tVector4	mLookDir;
 	
+	tMatrix44	mRotationMatrix;
 
 	tFrustum	mFrustum;
 	float		mfFOV;
