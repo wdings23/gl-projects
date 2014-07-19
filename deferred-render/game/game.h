@@ -39,6 +39,7 @@ public:
 	void toggleShader( void );
 
 	void zoomCamera( float fDPos );
+	void tiltCamera( float fDPos );
 
     inline void clearInputPos( void )   { mLastTouch.fX = mLastTouch.fY = -1.0f; }
     

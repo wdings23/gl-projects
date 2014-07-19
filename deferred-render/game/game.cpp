@@ -164,3 +164,21 @@ void CGame::zoomCamera( float fDPos )
 	mCamera.setPosition( &newPos );
 	mCamera.setLookAt( &newLookAt );
 }
+
+/*
+**
+*/
+void CGame::tiltCamera( float fDPos )
+{
+	tVector4 const* pPos = mCamera.getPosition();
+	tVector4 const* pLookAt = mCamera.getLookAt();
+
+	tVector4 newPos, newLookAt;
+	memcpy( &newPos, pPos, sizeof( tVector4 ) );
+	memcpy( &newLookAt, pLookAt, sizeof( tVector4 ) );
+
+	newLookAt.fY += fDPos;
+
+	mCamera.setPosition( &newPos );
+	mCamera.setLookAt( &newLookAt );
+}
