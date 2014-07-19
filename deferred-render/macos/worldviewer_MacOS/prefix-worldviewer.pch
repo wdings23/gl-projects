@@ -14,6 +14,7 @@
 #include <unistd.h>
 
 #include <OpenGL/gl.h>
+#include <OpenGL/glext.h>
 
 #define MACOS
 
@@ -34,3 +35,9 @@
 #define PI 3.14159f
 #define UI_USE_BATCH 1
 #define USE_VBO 1
+
+#define glVertexAttribDivisor glVertexAttribDivisorARB
+#define glBindVertexArray glBindVertexArrayAPPLE
+#define glDrawElementsInstancedEXT glDrawElementsInstancedARB
+
+#define GL_RGBA32F GL_RGBA32F_ARB

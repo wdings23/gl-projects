@@ -17,12 +17,15 @@ void main()
 	float fDepth = clamp( ( hazeMax - vPosition.z ) * ( 1.0 / hazeMax ), 0.0, 1.0 );
 	float fBlurStrength = clamp( abs( blurFalloffDepth - vPosition.z ), 0.0, 1.0 ); 
 	
-	float fAlpha = texture2D( texture, vTexCoord );
+	float fAlpha = texture2D( texture, vTexCoord ).a;
 	vec4 totalTexColor = vec4( 0.0, 0.0, 0.0, 0.0 );
 	
 	float gfNumStepX = 16.0;
 	float gfNumStepY = 16.0;
 	
+    int giNumStepX = 16;
+    int giNumStepY = 16;
+
 	float gfOffsetX = ( 10.0 * fBlurStrength ) / 256.0;
 	float gfOffsetY = ( 10.0 * fBlurStrength ) / 256.0;
 	
@@ -31,10 +34,10 @@ void main()
 	
 	float fOffsetY = vTexCoord.y - gfOffsetY;
 	float fY = vTexCoord.y - gfOffsetY;
-	for( int iY = 0; iY < gfNumStepX; iY++ )
+	for( int iY = 0; iY < giNumStepY; iY++ )
 	{
 		float fX = vTexCoord.x - gfOffsetX; 
-		for( int iX = 0; iX < gfNumStepX; iX++ )
+		for( int iX = 0; iX < giNumStepX; iX++ )
 		{
 			vec2 texCoord = vec2( fX, fY );
 			vec4 color = texture2D( texture, texCoord );
@@ -72,7 +75,7 @@ void main()
 #endif // #if 0
 	
 	gl_FragColor.xyz = totalTexColor.xyz * vColor.xyz * fDepth + 
-					   ( 1.0 - fDepth ) * hazeColor;
+					   ( 1.0 - fDepth ) * hazeColor.xyz;
 					   
 	gl_FragColor.w = totalTexColor.w * vColor.w;
 }

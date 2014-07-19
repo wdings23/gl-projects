@@ -428,8 +428,8 @@ CText* CLayer::handleText( TiXmlElement* pNode, float fScreenWidth )
 	CText* pText = new CText();
 	assert( pText );
 	
-    float fX, fY, fWidth, fHeight, fSize;
-    float fRed, fGreen, fBlue;
+    float fX = 0.0f, fY = 0.0f, fWidth = 0.0f, fHeight = 0.0f, fSize = 0.0f;
+    float fRed = 0.0f, fGreen = 0.0f, fBlue = 0.0f;
     char szText[256];
     const char* szFont = "Verdana";
     int iAlignment = CFont::ALIGN_LEFT;
@@ -655,7 +655,7 @@ CScrollList* CLayer::handleScrollList( CControl* pParent, TiXmlNode* pNode, floa
 {
     CScrollList* pScrollList = new CScrollList();
     
-    float fX, fY, fWidth, fHeight;
+    float fX = 0.0f, fY = 0.0f, fWidth = 0.0f, fHeight = 0.0f;
     CControl* pTemplate = NULL;
     
     TiXmlNode* pChild = pNode->FirstChild();

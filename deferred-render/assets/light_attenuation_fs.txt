@@ -10,6 +10,6 @@ void main( void )
 	float fDP = dot( vPosition.xy, vPosition.xy );
 	float fPct = sqrt( fDP * fDP );
 
-	gl_FragColor.xyz = vColor;
+	gl_FragColor.xyz = vColor.xyz;
 	gl_FragColor.w = ( 1.0 - fPct ) * 0.5;
 }

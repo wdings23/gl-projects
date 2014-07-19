@@ -110,6 +110,10 @@ void CBatchManager::draw( void )
         glVertexAttribPointer( pBucket->miShaderPosition, 4, GL_FLOAT, GL_FALSE, sizeof( tSpriteInterleaveVert ), 0 );
         glVertexAttribPointer( pBucket->miShaderTexCoord, 2, GL_FLOAT, GL_FALSE, sizeof( tSpriteInterleaveVert ), (GLvoid *)( sizeof( tVector4 ) ) );
         glVertexAttribPointer( pBucket->miShaderColor, 4, GL_FLOAT, GL_FALSE, sizeof( tSpriteInterleaveVert ), (GLvoid *)( sizeof( tVector4 ) + sizeof( tVector2 ) ) );
+
+        glEnableVertexAttribArray( pBucket->miShaderPosition );
+        glEnableVertexAttribArray( pBucket->miShaderTexCoord );
+        glEnableVertexAttribArray( pBucket->miShaderColor );
 #else
         glVertexAttribPointer( pBucket->miShaderPosition, 4, GL_FLOAT, GL_FALSE, sizeof( tSpriteInterleaveVert ), &pBucket->maSpriteVerts[0].maVerts[0].mV );
         glVertexAttribPointer( pBucket->miShaderTexCoord, 2, GL_FLOAT, GL_FALSE, sizeof( tSpriteInterleaveVert ), &pBucket->maSpriteVerts[0].maVerts[0].mTexCoord );
@@ -152,6 +156,10 @@ void CBatchManager::draw( void )
 #if defined( USE_VBO )
         glBindBuffer( GL_ARRAY_BUFFER, 0 );
 #endif // USE_VBO
+        
+        glDisableVertexAttribArray( pBucket->miShaderPosition );
+        glDisableVertexAttribArray( pBucket->miShaderTexCoord );
+        glDisableVertexAttribArray( pBucket->miShaderColor );
     }
 }
 

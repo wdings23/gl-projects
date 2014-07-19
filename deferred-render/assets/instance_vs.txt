@@ -1,8 +1,14 @@
-layout (location = 0) in vec4 position;
-layout (location = 1) in vec4 normal;
-layout (location = 2) in vec4 color;
-layout (location = 3) in vec4 scaling;
-layout (location = 4) in vec4 translation;
+//layout (location = 0) in vec4 position;
+//layout (location = 1) in vec4 normal;
+//layout (location = 2) in vec4 color;
+//layout (location = 3) in vec4 scaling;
+//layout (location = 4) in vec4 translation;
+
+attribute vec4 position;
+attribute vec4 normal;
+attribute vec4 color;
+attribute vec4 scaling;
+attribute vec4 translation;
 
 uniform mat4 view_matrix;
 uniform mat4 projection_matrix;

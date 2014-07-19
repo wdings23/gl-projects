@@ -8,6 +8,9 @@
 
 /* Begin PBXBuildFile section */
 		254C3E5A191C776400BA0A42 /* hud.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 254C3E58191C776400BA0A42 /* hud.cpp */; };
+		25794F1D197A091A00BB3B30 /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 25794F1C197A091A00BB3B30 /* CoreFoundation.framework */; };
+		25794F1F197A0AD600BB3B30 /* timeutil.mm in Sources */ = {isa = PBXBuildFile; fileRef = 259D755F191C2C7F0039FD65 /* timeutil.mm */; };
+		25794F21197A0B1B00BB3B30 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 25794F20197A0B1B00BB3B30 /* Foundation.framework */; };
 		259D7503191C2BE40039FD65 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 259D7502191C2BE40039FD65 /* main.cpp */; };
 		259D7505191C2BE40039FD65 /* worldviewer_MacOS.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = 259D7504191C2BE40039FD65 /* worldviewer_MacOS.1 */; };
 		259D750C191C2C550039FD65 /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 259D750B191C2C550039FD65 /* OpenGL.framework */; };
@@ -76,15 +79,14 @@
 		259D75EA191C2C7F0039FD65 /* tga.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 259D75A3191C2C7F0039FD65 /* tga.cpp */; };
 		259D75F3191C30010039FD65 /* game.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 259D75ED191C30010039FD65 /* game.cpp */; };
 		259D75F4191C30010039FD65 /* gamerender.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 259D75F1191C30010039FD65 /* gamerender.cpp */; };
-		259D75F5191C308C0039FD65 /* filepathutil.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 259D755A191C2C7F0039FD65 /* filepathutil.cpp */; };
-		259D75F6191C308C0039FD65 /* timeutil.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 259D755B191C2C7F0039FD65 /* timeutil.cpp */; };
+		25BED17E197A12DF00CA6DF5 /* filepathutil.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 259D755A191C2C7F0039FD65 /* filepathutil.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
 		259D74FD191C2BE40039FD65 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
-			dstPath = /usr/share/man/man1/;
+			dstPath = /usr/share/man/man1;
 			dstSubfolderSpec = 0;
 			files = (
 				259D7505191C2BE40039FD65 /* worldviewer_MacOS.1 in CopyFiles */,
@@ -96,6 +98,8 @@
 /* Begin PBXFileReference section */
 		254C3E58191C776400BA0A42 /* hud.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = hud.cpp; sourceTree = "<group>"; };
 		254C3E59191C776400BA0A42 /* hud.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = hud.h; sourceTree = "<group>"; };
+		25794F1C197A091A00BB3B30 /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
+		25794F20197A0B1B00BB3B30 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		259D74FF191C2BE40039FD65 /* worldviewer_MacOS */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = worldviewer_MacOS; sourceTree = BUILT_PRODUCTS_DIR; };
 		259D7502191C2BE40039FD65 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		259D7504191C2BE40039FD65 /* worldviewer_MacOS.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = worldviewer_MacOS.1; sourceTree = "<group>"; };
@@ -249,6 +253,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				25794F21197A0B1B00BB3B30 /* Foundation.framework in Frameworks */,
+				25794F1D197A091A00BB3B30 /* CoreFoundation.framework in Frameworks */,
 				259D750E191C2C600039FD65 /* GLUT.framework in Frameworks */,
 				259D750C191C2C550039FD65 /* OpenGL.framework in Frameworks */,
 			);
@@ -270,13 +276,15 @@
 		259D74F6191C2BE40039FD65 = {
 			isa = PBXGroup;
 			children = (
-				259D750D191C2C600039FD65 /* GLUT.framework */,
-				259D750B191C2C550039FD65 /* OpenGL.framework */,
 				254C3E57191C776400BA0A42 /* menus */,
 				259D75EC191C30010039FD65 /* game */,
 				259D750F191C2C7F0039FD65 /* src */,
 				259D7501191C2BE40039FD65 /* worldviewer_MacOS */,
 				259D7500191C2BE40039FD65 /* Products */,
+				25794F20197A0B1B00BB3B30 /* Foundation.framework */,
+				25794F1C197A091A00BB3B30 /* CoreFoundation.framework */,
+				259D750D191C2C600039FD65 /* GLUT.framework */,
+				259D750B191C2C550039FD65 /* OpenGL.framework */,
 			);
 			sourceTree = "<group>";
 		};
@@ -625,8 +633,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				259D75F5191C308C0039FD65 /* filepathutil.cpp in Sources */,
-				259D75F6191C308C0039FD65 /* timeutil.cpp in Sources */,
+				25BED17E197A12DF00CA6DF5 /* filepathutil.cpp in Sources */,
+				25794F1F197A0AD600BB3B30 /* timeutil.mm in Sources */,
 				259D75BB191C2C7F0039FD65 /* shadermanager.cpp in Sources */,
 				259D75B5191C2C7F0039FD65 /* modelkeyanim.cpp in Sources */,
 				259D75DA191C2C7F0039FD65 /* animplayer.cpp in Sources */,
