@@ -9,7 +9,7 @@ varying vec2 vTexCoord;
 varying vec2 vEyeSpacePos;
 
 const vec4 lightDir = vec4( 1.0, 1.0f, -1.0, 1.0 );
-const vec4 ambientLight = vec4( 0.1, 0.1, 0.1, 1.0 );
+const vec4 ambientLight = vec4( 0.2, 0.2, 0.2, 1.0 );
 const vec4 hazeColor = vec4( 0.5, 0.5, 0.5, 1.0 );
 
 void main( void )
@@ -41,7 +41,7 @@ void main( void )
 	vec4 lightColor = texture2D( lightTex, vTexCoord );
 	vec3 totalColor = color.xyz * fDP * color.a + ambientLight.xyz * color.a + lightColor.xyz;
 	
-	gl_FragColor.xyz = ( color.xyz * fDP * ambientOcclusionColor.xyz + ambientLight.xyz ) + lightColor.xyz; //vec4( totalColor, 1.0 );
-	//gl_FragColor.xyz = color.xyz * ambientOcclusionColor.xyz + lightColor.xyz;
+	//gl_FragColor.xyz = ( color.xyz * fDP * ambientOcclusionColor.xyz + ambientLight.xyz ) + lightColor.xyz; //vec4( totalColor, 1.0 );
+	gl_FragColor.xyz = color.xyz * ambientOcclusionColor.xyz + lightColor.xyz;
 	gl_FragColor.w = color.w;
 }
