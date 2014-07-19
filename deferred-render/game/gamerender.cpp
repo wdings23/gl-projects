@@ -6,9 +6,12 @@
 #include "hud.h"
 #include "fontmanager.h"
 #include "textureatlasmanager.h"
-#include "glee.h"
 #include "filepathutil.h"
 #include "LodePNG.h"
+
+#if defined( _WIN32 )
+#include "glee.h"
+#endif // _WIN32
 
 struct LevelJobData
 {
@@ -50,16 +53,8 @@ struct LightInfo
 
 typedef struct LightInfo tLightInfo;
 
-static GLuint siPositionBuffer;
-static GLuint siColorBuffer;
-static GLuint siScalingBuffer;
-static GLuint siTranslationBuffer;
-static GLuint siNormalBuffer;
-static GLuint siIndexBuffer;
 
-static float* saColors;
-static float* saScaling;
-static float* saTranslation;
+static GLuint siIndexBuffer;
 
 static GLuint siDeferredFBO;
 static GLuint siPositionTexture;
@@ -80,7 +75,6 @@ static GLuint siSphererIndexBuffer;
 
 static GLuint siInstanceVBO;
 static GLuint siInstanceInfoVBO;
-static GLuint siModelVertexArray;
 
 static int siNumSphereTris;
 
@@ -89,8 +83,6 @@ static CCamera const* spCamera;
 
 static tLightInfo* saLightInfo;
 const int giNumLights = 100;
-
-const float gfLightRadius = 10.0f;
 
 /*
 **
@@ -209,7 +201,6 @@ static void createSphere( void )
 		else if( szLine[0] == 'f' )
 		{
 			// face
-			int aiVal[] = { 0, 0, 0 };
 			char* pacNumStart = strstr( szLine, " " ) + 1;
 			char* pacLineEnd = strstr( szLine, "\n" );
 			bool bDone = false;
@@ -292,8 +283,8 @@ static void createSphere( void )
 	glGenBuffers( 1, &siSphereBuffer );
 	glBindBuffer( GL_ARRAY_BUFFER, siSphereBuffer );
 	glBufferData( GL_ARRAY_BUFFER, sizeof( tInstanceVertex ) * iNumFaces * 3, aVertices, GL_STATIC_DRAW );
-	glEnableVertexAttribArray( 0 );
-	glVertexAttribPointer( 0, 4, GL_FLOAT, GL_FALSE, sizeof( tInstanceVertex ), NULL );
+//	glEnableVertexAttribArray( 0 );
+//	glVertexAttribPointer( 0, 4, GL_FLOAT, GL_FALSE, sizeof( tInstanceVertex ), NULL );
 
 	// indices
 	glGenBuffers( 1, &siSphererIndexBuffer );
@@ -408,8 +399,8 @@ static void initInstancing( void )
 		aiIndices[iIndex] = aiIndices[iIndex+2];
 		aiIndices[iIndex+2] = iTemp;
 	}
-
-	srand( time( NULL ) );
+    
+	srand( (unsigned int)time( NULL ) );
 	
 	int iNumIndices = sizeof( aiIndices ) / sizeof( *aiIndices );
 	tInstanceVertex* aVerts = (tInstanceVertex *)malloc( sizeof( tInstanceVertex ) * iNumIndices );
@@ -482,21 +473,24 @@ static void initInstancing( void )
 		}
 	}
 	
-	int iPosAttrib = 0;
-	int iNormAttrib = 1;
-	int iColorAttrib = 2;
-	int iScaleAttrib = 3;
-	int iTransAttrib = 4;
+    int iShader = CShaderManager::instance()->getShader( "instance_deferred" );
+    glUseProgram( iShader );
+    
+//	int iPosAttrib = glGetAttribLocation( iShader, "position" );
+//	int iNormAttrib = glGetAttribLocation( iShader, "normal" );
+//	int iColorAttrib = glGetAttribLocation( iShader, "color" );
+//	int iScaleAttrib = glGetAttribLocation( iShader, "scaling" );
+//	int iTransAttrib = glGetAttribLocation( iShader, "translation" );
 	
 	glGenBuffers( 1, &siInstanceVBO );
 	glBindBuffer( GL_ARRAY_BUFFER, siInstanceVBO );
 	glBufferData( GL_ARRAY_BUFFER, sizeof( tInstanceVertex ) * iNumIndices, aVerts, GL_STATIC_DRAW );
 	
-	glEnableVertexAttribArray( iPosAttrib );
-	glVertexAttribPointer( iPosAttrib, 4, GL_FLOAT, GL_FALSE, sizeof( tInstanceVertex ), NULL );
-	
-	glEnableVertexAttribArray( iNormAttrib );
-	glVertexAttribPointer( iNormAttrib, 4, GL_FLOAT, GL_FALSE, sizeof( tInstanceVertex ), (void *)sizeof( tVector2 ) );
+//	glEnableVertexAttribArray( iPosAttrib );
+//	glVertexAttribPointer( iPosAttrib, 4, GL_FLOAT, GL_FALSE, sizeof( tInstanceVertex ), NULL );
+//	
+//	glEnableVertexAttribArray( iNormAttrib );
+//	glVertexAttribPointer( iNormAttrib, 4, GL_FLOAT, GL_FALSE, sizeof( tInstanceVertex ), (void *)sizeof( tVector2 ) );
 	
 	// indices
 	glGenBuffers( 1, &siIndexBuffer );
@@ -510,20 +504,29 @@ static void initInstancing( void )
 	glBindBuffer( GL_ARRAY_BUFFER, siInstanceInfoVBO );
 	glBufferData( GL_ARRAY_BUFFER, sizeof( tInstanceInfo ) * siNumCubes, aInstanceInfo, GL_DYNAMIC_DRAW );
 	
-	glEnableVertexAttribArray( iTransAttrib );
-	glVertexAttribPointer( iTransAttrib, 4, GL_FLOAT, GL_FALSE, sizeof( tInstanceInfo ), NULL );
-	glVertexAttribDivisor( iTransAttrib, 1 );
-
-	glEnableVertexAttribArray( iScaleAttrib );
-	glVertexAttribPointer( iScaleAttrib, 4, GL_FLOAT, GL_FALSE, sizeof( tInstanceInfo ), (void *)sizeof( tVector4 ) );
-	glVertexAttribDivisor( iScaleAttrib, 1 );
-
-	glEnableVertexAttribArray( iColorAttrib );
-	glVertexAttribPointer( iColorAttrib, 4, GL_FLOAT, GL_FALSE, sizeof( tInstanceInfo ), (void *)( sizeof( tVector4 ) + sizeof( tVector4 ) ) );
-	glVertexAttribDivisor( iColorAttrib, 1 );
-
+//	glEnableVertexAttribArray( iTransAttrib );
+//	glVertexAttribPointer( iTransAttrib, 4, GL_FLOAT, GL_FALSE, sizeof( tInstanceInfo ), NULL );
+//	glVertexAttribDivisor( iTransAttrib, 1 );
+//
+//	glEnableVertexAttribArray( iScaleAttrib );
+//	glVertexAttribPointer( iScaleAttrib, 4, GL_FLOAT, GL_FALSE, sizeof( tInstanceInfo ), (void *)sizeof( tVector4 ) );
+//	glVertexAttribDivisor( iScaleAttrib, 1 );
+//
+//	glEnableVertexAttribArray( iColorAttrib );
+//	glVertexAttribPointer( iColorAttrib, 4, GL_FLOAT, GL_FALSE, sizeof( tInstanceInfo ), (void *)( sizeof( tVector4 ) + sizeof( tVector4 ) ) );
+//	glVertexAttribDivisor( iColorAttrib, 1 );
+//
+//    glDisableVertexAttribArray( iColorAttrib );
+//    glDisableVertexAttribArray( iScaleAttrib );
+//    glDisableVertexAttribArray( iTransAttrib );
+//    
+//    glDisableVertexAttribArray( iNormAttrib );
+//    glDisableVertexAttribArray( iPosAttrib );
+    
 	free( aInstanceInfo );
 
+    glUseProgram( 0 );
+    
 	// deferred fbo textures
 	{
 		int iFBWidth = (int)( (float)renderGetScreenWidth() * renderGetScreenScale() );
@@ -531,28 +534,44 @@ static void initInstancing( void )
 
 		glGenFramebuffers( 1, &siDeferredFBO );
 		glBindFramebuffer( GL_DRAW_FRAMEBUFFER, siDeferredFBO );
-		
+        
 		// albedo 
 		glGenTextures( 1, &siAlbedoTexture );
 		glBindTexture( GL_TEXTURE_2D, siAlbedoTexture );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
 		glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA32F, iFBWidth, iFBHeight, 0, GL_RGBA, GL_FLOAT, NULL );
-		glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, siAlbedoTexture, 0);
+        glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, siAlbedoTexture, 0);
 		
 		// position 
 		glGenTextures( 1, &siPositionTexture );
 		glBindTexture( GL_TEXTURE_2D, siPositionTexture );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
 		glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA32F, iFBWidth, iFBHeight, 0, GL_RGBA, GL_FLOAT, NULL );
 		glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, siPositionTexture, 0);
 
 		// normal
 		glGenTextures( 1, &siNormalTexture );
 		glBindTexture( GL_TEXTURE_2D, siNormalTexture );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
 		glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA32F, iFBWidth, iFBHeight, 0, GL_RGBA, GL_FLOAT, NULL );
 		glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, siNormalTexture, 0);
 
 		// depth
 		glGenTextures( 1, &siDepthTexture );
 		glBindTexture( GL_TEXTURE_2D, siDepthTexture );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
 		glTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, iFBWidth, iFBHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL );
 		glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, siDepthTexture, 0);
 		
@@ -565,11 +584,19 @@ static void initInstancing( void )
 
 		glGenTextures( 1, &siLightTexture );
 		glBindTexture( GL_TEXTURE_2D, siLightTexture );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
 		glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA32F, iFBWidth, iFBHeight, 0, GL_RGBA, GL_FLOAT, NULL );
 		glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, siLightTexture, 0);
 		
 		glGenTextures( 1, &siLightDepthTexture );
 		glBindTexture( GL_TEXTURE_2D, siLightDepthTexture );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
 		glTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, iFBWidth, iFBHeight, 0, GL_RGBA, GL_FLOAT, NULL );
 		glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, siLightDepthTexture, 0);
 
@@ -587,6 +614,10 @@ static void initInstancing( void )
 
 		glGenTextures( 1, &siAmbientOcclusionTexture );
 		glBindTexture( GL_TEXTURE_2D, siAmbientOcclusionTexture );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
 		glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA32F, iFBWidth, iFBHeight, 0, GL_RGBA, GL_FLOAT, NULL );
 		glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, siAmbientOcclusionTexture, 0);
 
@@ -648,24 +679,27 @@ static void drawInstances( CCamera const* pCamera, GLuint iFBO, GLuint iShader )
 	glUniformMatrix4fv( iViewMatrix, 1, GL_FALSE, viewMatrix.afEntries ); 
 	glUniformMatrix4fv( iProjMatrix, 1, GL_FALSE, projMatrix.afEntries ); 
 
-	int iPosAttrib = 0;
-	int iNormAttrib = 1;
-	int iColorAttrib = 2;
-	int iScaleAttrib = 3;
-	int iTransAttrib = 4;
+	int iPosAttrib = glGetAttribLocation( iShader, "position" );
+	int iNormAttrib = glGetAttribLocation( iShader, "normal" );
+	int iColorAttrib = glGetAttribLocation( iShader, "color" );
+	int iScaleAttrib = glGetAttribLocation( iShader, "scaling" );
+	int iTransAttrib = glGetAttribLocation( iShader, "translation" );
 
 	// enable attribs and set ptr	
 	glBindBuffer( GL_ARRAY_BUFFER, siInstanceInfoVBO );
 	
 	glEnableVertexAttribArray( iTransAttrib );
 	glVertexAttribPointer( iTransAttrib, 4, GL_FLOAT, GL_FALSE, sizeof( tInstanceInfo ), NULL );
-
+    glVertexAttribDivisor( iTransAttrib, 1 );
+    
 	glEnableVertexAttribArray( iScaleAttrib );
 	glVertexAttribPointer( iScaleAttrib, 4, GL_FLOAT, GL_FALSE, sizeof( tInstanceInfo ), (void *)sizeof( tVector4 ) );
-
-	glEnableVertexAttribArray( siColorBuffer );
-	glVertexAttribPointer( siColorBuffer, 4, GL_FLOAT, GL_FALSE, sizeof( tInstanceInfo ), (void *)( sizeof( tVector4 ) + sizeof( tVector4 ) ) );
-
+    glVertexAttribDivisor( iScaleAttrib, 1 );
+    
+	glEnableVertexAttribArray( iColorAttrib );
+	glVertexAttribPointer( iColorAttrib, 4, GL_FLOAT, GL_FALSE, sizeof( tInstanceInfo ), (void *)( sizeof( tVector4 ) + sizeof( tVector4 ) ) );
+    glVertexAttribDivisor( iColorAttrib, 1 );
+    
 	glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, siIndexBuffer );
 	glBindBuffer( GL_ARRAY_BUFFER, siInstanceVBO );
 	
@@ -680,9 +714,19 @@ static void drawInstances( CCamera const* pCamera, GLuint iFBO, GLuint iShader )
 	// draw
 	glDrawElementsInstancedEXT( GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0, siNumCubes );
 
+    glDisableVertexAttribArray( iNormAttrib );
+    glDisableVertexAttribArray( iPosAttrib );
+    glDisableVertexAttribArray( iColorAttrib );
+    glDisableVertexAttribArray( iScaleAttrib );
+    glDisableVertexAttribArray( iTransAttrib );
+
+    glVertexAttribDivisor( iColorAttrib, 0 );
+    glVertexAttribDivisor( iScaleAttrib, 0 );
+    glVertexAttribDivisor( iTransAttrib, 0 );
+    
 	glBindBuffer( GL_ARRAY_BUFFER, 0 );
 	glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );
-	glBindVertexArray( 0 );
+	//glBindVertexArray( 0 );
 }
 
 /*
@@ -734,6 +778,18 @@ static void drawLightModel( void )
 	// disable writing to depth buffer
 	glDepthMask( GL_FALSE );
 
+    for( int j = 0; j < 8; j++ )
+    {
+        glActiveTexture( GL_TEXTURE1 + j );
+        glBindTexture( GL_TEXTURE_2D, 0 );
+    }
+    
+    // position texture
+    GLuint iPosTex = glGetUniformLocation( iLightShader, "posTex" );
+    glActiveTexture( GL_TEXTURE0 );
+    glUniform1i( iPosTex, 0 );
+    glBindTexture( GL_TEXTURE_2D, siPositionTexture );
+    
 	for( int i = 0; i < giNumLights; i++ )
 	{
 		tLightInfo* pLight = &saLightInfo[i];
@@ -786,6 +842,8 @@ static void drawLightModel( void )
 		// render light into stencil
 		glDrawElements( GL_TRIANGLES, siNumSphereTris, GL_UNSIGNED_INT, 0 );
 		
+        glDisableVertexAttribArray( iPos );
+        
 		// render light color
 		{
 			glEnable( GL_CULL_FACE );
@@ -799,12 +857,6 @@ static void drawLightModel( void )
 			int iLightAttenShader = CShaderManager::instance()->getShader( "light_attenuation" );
 			glUseProgram( iLightAttenShader );
 			
-			// position texture
-			GLuint iPosTex = glGetUniformLocation( iLightShader, "posTex" );
-			glActiveTexture( GL_TEXTURE0 );
-			glUniform1i( iPosTex, 0 );
-			glBindTexture( GL_TEXTURE_2D, siPositionTexture );
-
 			// light's color
 			GLint iLightAttenColor = glGetUniformLocation( iLightAttenShader, "lightColor" );
 			WTFASSERT2( iLightAttenColor >= 0, "invalid semantic lightColor" );
@@ -823,12 +875,6 @@ static void drawLightModel( void )
 
 			GLint iPos = glGetAttribLocation( iInstanceShader, "position" ); 
 			
-			for( int j = 0; j < 4; j++ )
-			{
-				glActiveTexture( GL_TEXTURE1 + j );
-				glBindTexture( GL_TEXTURE_2D, 0 );
-			}
-
 			// bind vbo
 			glBindBuffer( GL_ARRAY_BUFFER, siSphereBuffer );
 			glEnableVertexAttribArray( iPos );
@@ -838,10 +884,11 @@ static void drawLightModel( void )
 			glDrawElements( GL_TRIANGLES, siNumSphereTris, GL_UNSIGNED_INT, 0 );
 
 			glColorMask( GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE );
+            glDisableVertexAttribArray( iPos );
 		}
 
 	}	// for i = 0 to num lights
-
+    
 	glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
 	//glDisable( GL_BLEND );
 	
@@ -874,22 +921,22 @@ static void drawDeferredScene( void )
 		{ 1.0f, 1.0f, 0.0f, 1.0f },
 	};
     
-	tVector2 aUV[] = 
+	tVector2 aTexCoords[] =
 	{
 		{ 0.0f, 0.0f },
 		{ 1.0, 0.0f },
 		{ 0.0f, 1.0f },
 		{ 1.0f, 1.0f }
 	};
-
+    
 	// create ambient occlusion texture 
 	{
 		glBindFramebuffer( GL_DRAW_FRAMEBUFFER, siAmbientOcclusionFBO );
-
+        //glBindFramebuffer( GL_DRAW_FRAMEBUFFER, 0 );
+        
 		glClearColor( 0.0f, 0.0f, 0.0f, 0.0f );
 		glClear( GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
 
-		//int iShader = CShaderManager::instance()->getShader( "deferred_shading" );
 		int iShader = CShaderManager::instance()->getShader( "ambient_occlusion" );
 		WTFASSERT2( iShader > 0, "invalid shader" );
 
@@ -906,46 +953,39 @@ static void drawDeferredScene( void )
 		glUniform1i( iNormalTex, 1 );
 		glBindTexture( GL_TEXTURE_2D, siNormalTexture );
 
-		GLuint iLightTex = glGetUniformLocation( iShader, "lightTex" );
-		glActiveTexture( GL_TEXTURE2 );
-		glUniform1i( iLightTex, 2 );
-		glBindTexture( GL_TEXTURE_2D, siLightTexture );
-
-		GLuint iDepthTex = glGetUniformLocation( iShader, "depthTex" );
-		glActiveTexture( GL_TEXTURE3 );
-		glUniform1i( iDepthTex, 3 );
-		glBindTexture( GL_TEXTURE_2D, siDepthTexture );
-
 		GLuint iPosTex = glGetUniformLocation( iShader, "posTex" );
-		glActiveTexture( GL_TEXTURE4 );
-		glUniform1i( iPosTex, 4 );
+		glActiveTexture( GL_TEXTURE2 );
+		glUniform1i( iPosTex, 2 );
 		glBindTexture( GL_TEXTURE_2D, siPositionTexture );
 
 		tTexture* pRandomTexture = CTextureManager::instance()->getTexture( "random_dir.tga" );
 
 		GLuint iRandomDirTex = glGetUniformLocation( iShader, "randomDirTex" );
-		glActiveTexture( GL_TEXTURE5 );
-		glUniform1i( iRandomDirTex, 5 );
+		glActiveTexture( GL_TEXTURE3 );
+		glUniform1i( iRandomDirTex, 3 );
 		glBindTexture( GL_TEXTURE_2D, pRandomTexture->miID );
-
-		//glDisable( GL_CULL_FACE );
 
 		int iPosition = glGetAttribLocation( iShader, "position" );
 		int iUV = glGetAttribLocation( iShader, "uv" );
 
+        glVertexAttribPointer( iUV, 2, GL_FLOAT, GL_FALSE, 0, aTexCoords );
+		glEnableVertexAttribArray( iUV );
+        
 		glVertexAttribPointer( iPosition, 4, GL_FLOAT, GL_FALSE, 0, aScreenVerts );
-		glEnableVertexAttribArray( 0 );
-    
-		glVertexAttribPointer( iUV, 2, GL_FLOAT, GL_FALSE, 0, aUV );
-		glEnableVertexAttribArray( 1 );
+		glEnableVertexAttribArray( iPosition );
     
 		glDrawArrays( GL_TRIANGLE_STRIP, 0, 4 );
-
+        
+        glDisableVertexAttribArray( iUV );
+        glDisableVertexAttribArray( iPosition );
+        
 		glBindFramebuffer( GL_DRAW_FRAMEBUFFER, 0 );
 	}
 
 	// draw final scene
 	{
+        glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+        
 		int iShader = CShaderManager::instance()->getShader( "deferred_shading" );
 		WTFASSERT2( iShader > 0, "invalid shader" );
 
@@ -986,10 +1026,10 @@ static void drawDeferredScene( void )
 		int iUV = glGetAttribLocation( iShader, "uv" );
 
 		glVertexAttribPointer( iPosition, 4, GL_FLOAT, GL_FALSE, 0, aScreenVerts );
-		glEnableVertexAttribArray( 0 );
+		glEnableVertexAttribArray( iPosition );
     
-		glVertexAttribPointer( iUV, 2, GL_FLOAT, GL_FALSE, 0, aUV );
-		glEnableVertexAttribArray( 1 );
+		glVertexAttribPointer( iUV, 2, GL_FLOAT, GL_FALSE, 0, aTexCoords );
+		glEnableVertexAttribArray( iUV );
     
 		glDrawArrays( GL_TRIANGLE_STRIP, 0, 4 );
 	}
@@ -1067,8 +1107,7 @@ void CGameRender::draw( float fDT )
     float fScreenWidth = renderGetScreenWidth() * renderGetScreenScale();
     float fScreenHeight = renderGetScreenHeight() * renderGetScreenScale();
     
-	GLint iShader = CShaderManager::instance()->getShader( "ui" );
-    mFont.drawString( szFPS,
+	mFont.drawString( szFPS,
                       640.0f,
                       fScreenHeight - 40.0f,
                       20.0f,

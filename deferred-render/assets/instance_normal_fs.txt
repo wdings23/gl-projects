@@ -9,6 +9,6 @@ const float fHazeStartDistance = 10.0;
 void main( void )
 {
 	float fHazePct = clamp( ( vPosition.z * 0.5 + 0.5 ) - fHazeStartDistance, 0.0, 1.0 );
-	gl_FragColor.xyz = vColor * ( 1.0 - fHazePct ) + hazeColor * fHazePct;
+	gl_FragColor.xyz = vColor.xyz * ( 1.0 - fHazePct ) + hazeColor.xyz * fHazePct;
 	gl_FragColor.w = 1.0;
 }

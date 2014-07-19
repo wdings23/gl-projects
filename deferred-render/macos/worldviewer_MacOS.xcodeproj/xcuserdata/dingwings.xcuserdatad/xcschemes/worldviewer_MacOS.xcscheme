@@ -59,7 +59,7 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "/Users/dingwings/SVN2/projects/worldviewer/assets/scene.cac"
+            argument = "/Users/dingwings/Documents/Projects/gl-projects/deferred-render/assets"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>

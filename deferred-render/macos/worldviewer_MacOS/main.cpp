@@ -16,6 +16,10 @@
 
 #include "hud.h"
 
+#ifdef __APPLE__
+#include "CoreFoundation/CoreFoundation.h"
+#endif
+
 static void release( void );
 static void render( void );
 static void initGL( char* argv[] );
@@ -30,6 +34,9 @@ static void renderScene( void );
 
 #define WINDOW_WIDTH 640
 #define WINDOWN_HEIGHT 960
+
+static bool sbZooming = false;
+static float sfLastY = -1.0f;
 
 /*
 **
@@ -79,38 +86,17 @@ static void initGL( char* argv[] )
 	glEnableClientState( GL_VERTEX_ARRAY );
 	glEnableClientState( GL_INDEX_ARRAY );
 	
-	char szDir[256];
-	memset( szDir, 0, sizeof( szDir ) );
-	
-	char szFileName[256];
-	memset( szFileName, 0, sizeof( szFileName ) );
+	char szWriteDir[256];
+	snprintf( szWriteDir, sizeof( szWriteDir ), "%s/save", argv[1] );
     
-	int iSize = (int)strlen( argv[1] );
-	for( int i = iSize - 1; i >= 0; i-- )
-	{
-		if( argv[1][i] == '/' ||
-           argv[1][i] == '\\' )
-		{
-			memcpy( szDir, argv[1], i );
-			
-			size_t iStringSize = iSize - i;
-			memcpy( szFileName, &argv[1][i+1], iStringSize );
-			break;
-		}
-	}
-    
-    char szWriteDir[256];
-    snprintf( szWriteDir, sizeof( szWriteDir ), "%s\\write", szDir );
-    
-	setFileDirectories( szDir,
-                        szWriteDir );
+	setFileDirectories( argv[1], szWriteDir );
     
 	renderSetScreenWidth( WINDOW_WIDTH );
 	renderSetScreenHeight( WINDOWN_HEIGHT );
 	renderSetScreenScale( 1.0f );
     
 	CGame::instance()->init();
-	CGame::instance()->setSceneFileName( szFileName );
+	//CGame::instance()->setSceneFileName( szFileName );
 }
 
 /*
@@ -170,20 +156,26 @@ static void mouseInput( int iButton, int iState, int iX, int iY )
 		{
 			iTouchType = TOUCHTYPE_ENDED;
 		}
-		
-		float fX = (float)iX;
-		float fY = (float)iY;
 	}
 	else if( iButton == GLUT_RIGHT_BUTTON )
 	{
-		
+		if( iState == GLUT_DOWN )
+		{
+			sfLastY = -1.0f;
+			sbZooming = true;
+		}
+		else if( iState == GLUT_UP )
+		{
+			sfLastY = -1.0f;
+			sbZooming = false;
+		}
 	}
     
-    float fX = (float)iX;
-    float fY = (float)iY;
+	float fX = (float)iX;
+	float fY = (float)iY;
     
 	CGame::instance()->inputUpdate( fX, fY, iTouchType );
-    CHUD::instance()->inputUpdate( fX, fY, 0, 1, iTouchType );
+	CHUD::instance()->inputUpdate( fX, fY, 0, 1, iTouchType );
 }
 
 /*
@@ -255,8 +247,21 @@ static void mouseMotionInput( int iX, int iY )
 	float fX = (float)iX;
 	float fY = (float)iY;
 	
-	CGame::instance()->inputUpdate( fX, fY, TOUCHTYPE_MOVED );
-    CHUD::instance()->inputUpdate( fX, fY, 0, 1, TOUCHTYPE_MOVED );
+	if( sbZooming )
+	{
+		if( sfLastY < 0.0f )
+		{
+			sfLastY = fY;
+		}
+		
+		CGame::instance()->zoomCamera( ( sfLastY - fY ) * 0.01f );
+	}
+	else
+	{
+		CGame::instance()->inputUpdate( fX, fY, TOUCHTYPE_MOVED );
+	}
+    
+	sfLastY = fY;
 }
 
 /*
