@@ -82,7 +82,7 @@ static int siNumCubes = 100000;
 static CCamera const* spCamera;
 
 static tLightInfo* saLightInfo;
-const int giNumLights = 100;
+const int giNumLights = 50;
 
 /*
 **
@@ -835,12 +835,15 @@ static void drawLightModel( void )
 			
 			// light's color
 			GLint iLightAttenColor = glGetUniformLocation( iLightAttenShader, "lightColor" );
-			WTFASSERT2( iLightAttenColor >= 0, "invalid semantic lightColor" );
+			//WTFASSERT2( iLightAttenColor >= 0, "invalid semantic lightColor" );
 			glUniform4f( iLightAttenColor, pLight->mColor.fX, pLight->mColor.fY, pLight->mColor.fZ, pLight->mColor.fW );
 
 			GLint iLightAttenPos = glGetUniformLocation( iLightAttenShader, "lightPos" );
 			//WTFASSERT2( iLightAttenPos >= 0, "invalid semantic lightPos" );
 			glUniform4f( iLightAttenPos, pLight->mXFormPosition.fX, pLight->mXFormPosition.fY, pLight->mXFormPosition.fZ, pLight->mXFormPosition.fW );
+
+			GLint iLightSize = glGetUniformLocation( iLightAttenShader, "lightSize" );
+			glUniform1f( iLightSize, 1.0f / pLight->mfSize * 0.25f );
 
 			// set matrices
 			iViewMatrix = glGetUniformLocation( iLightAttenShader, "view_matrix" );

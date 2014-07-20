@@ -1,15 +1,24 @@
 uniform sampler2D posTex;
+uniform float lightSize;
+uniform vec4 lightColor;
 
-varying vec4 vColor;
 varying vec2 vTexCoord;
 varying vec4 vLightPos;
 varying vec4 vPosition;
 
 void main( void )
 {
-	float fDP = dot( vPosition.xy, vPosition.xy );
-	float fPct = sqrt( fDP * fDP );
+	// position and difference to the light's center
+	vec3 position = texture2D( posTex, vTexCoord ).xyz;	
+	vec3 diff = vLightPos.xyz - position;
 
-	gl_FragColor.xyz = vColor.xyz;
-	gl_FragColor.w = 0.5; //( 1.0 - fPct ) * 0.5;
+	// percentage based on the length from center
+	float fDP = dot( diff, diff );
+	float fPct = sqrt( fDP * fDP ) * lightSize;
+
+	gl_FragColor.xyz = lightColor.xyz;
+	gl_FragColor.w = clamp( 1.0 - fPct, 0.0, 1.0 );
+
+	//gl_FragColor.xyz = vLightPos.xyz;
+	//gl_FragColor.w = 1.0;
 }

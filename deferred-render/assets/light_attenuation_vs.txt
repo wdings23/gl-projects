@@ -4,20 +4,17 @@ attribute vec4 position;
 uniform mat4 view_matrix;
 uniform mat4 projection_matrix;
 
-uniform vec4 lightColor;
-uniform vec4 lightPos;
-
-varying vec4 vColor;
 varying vec4 vPosition;
 varying vec2 vTexCoord;
 varying vec4 vLightPos;
 
 void main( void )
 {
-	vColor = lightColor;
-	
-	vPosition = position;
-	
+	// translation part = light's position
+	vLightPos.x = view_matrix[3][0];
+	vLightPos.y = view_matrix[3][1];
+	vLightPos.z = view_matrix[3][2];
+
 	vec4 eyeSpacePos = projection_matrix * view_matrix * position;
 	vTexCoord.x = ( eyeSpacePos.x / eyeSpacePos.w ) * 0.5 + 0.5;
 	vTexCoord.y = ( eyeSpacePos.y / eyeSpacePos.w ) * 0.5 + 0.5;	
