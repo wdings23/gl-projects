@@ -82,7 +82,7 @@ static int siNumCubes = 100000;
 static CCamera const* spCamera;
 
 static tLightInfo* saLightInfo;
-const int giNumLights = 2;
+const int giNumLights = 100;
 
 /*
 **
@@ -605,9 +605,9 @@ static void initInstancing( void )
 	for( int i = 0; i < giNumLights; i++ )
 	{
 		tLightInfo* pLightInfo = &saLightInfo[i];
-		pLightInfo->mColor.fX = 1.0f; //(float)( rand() % iRandRange ) / (float)iRandRange;
-		pLightInfo->mColor.fY = 1.0f; //(float)( rand() % iRandRange ) / (float)iRandRange;
-		pLightInfo->mColor.fZ = 0.0f; //(float)( rand() % iRandRange ) / (float)iRandRange;
+		pLightInfo->mColor.fX =(float)( rand() % iRandRange ) / (float)iRandRange;
+		pLightInfo->mColor.fY = (float)( rand() % iRandRange ) / (float)iRandRange;
+		pLightInfo->mColor.fZ = (float)( rand() % iRandRange ) / (float)iRandRange;
 		pLightInfo->mColor.fW = 1.0f;
 
 		pLightInfo->mPosition.fX = (float)( rand() % iRandRange ) / 50.0f + 0.0f;
@@ -615,7 +615,7 @@ static void initInstancing( void )
 		pLightInfo->mPosition.fZ = (float)( rand() % iRandRange ) / 500.0f;
 		pLightInfo->mPosition.fW = 1.0f;
 
-		pLightInfo->mfSize = 10.0f; // (float)( rand() % iRandRange ) / 200.0f;
+		pLightInfo->mfSize = (float)( rand() % iRandRange ) / 200.0f;
 		pLightInfo->mfAngle = 0.0f;
 		pLightInfo->mfAngleInc = (float)( rand() % iRandRange ) / ( (float)iRandRange * 10.0f );
 		pLightInfo->mfAngleInc -= (float)iRandRange * 0.5f / ( (float)iRandRange * 10.0f );;
@@ -805,11 +805,13 @@ static void drawLightModel( void )
 		glEnable( GL_STENCIL_TEST );
 		glEnable( GL_CULL_FACE );
 		
-		glStencilFunc( GL_ALWAYS, 0, 0x0 );				// always pass (write to every pixel)
-		
+		glStencilFunc( GL_ALWAYS, 0, 0xFF );				// always pass (write to every pixel)
+
 		glDisable( GL_CULL_FACE );
-		glStencilOpSeparate( GL_BACK, GL_KEEP, GL_INCR_WRAP, GL_KEEP );
-		glStencilOpSeparate( GL_FRONT, GL_KEEP, GL_DECR_WRAP, GL_KEEP );
+		
+		// increase on depth fail for back face, decrease on depth pass for front and check for 0 value
+		glStencilOpSeparate( GL_BACK, GL_KEEP, GL_INCR_WRAP, GL_KEEP );	
+		glStencilOpSeparate( GL_FRONT, GL_KEEP, GL_KEEP, GL_DECR_WRAP );
 
 		// render light into stencil
 		glDrawElements( GL_TRIANGLES, siNumSphereTris, GL_UNSIGNED_INT, 0 );
@@ -821,9 +823,11 @@ static void drawLightModel( void )
 			glEnable( GL_CULL_FACE );
 			glDisable( GL_DEPTH_TEST );
 
-			glStencilOp( GL_KEEP, GL_KEEP, GL_KEEP );
-			glStencilFunc( GL_NOTEQUAL, 0, 0xFF );
-			//glStencilFunc( GL_ALWAYS, 1, 0xFF );
+			// replace stencil value back to 0 for next light
+			glStencilOp( GL_REPLACE, GL_REPLACE, GL_REPLACE );
+			
+			// draw where it's equal to 0
+			glStencilFunc( GL_EQUAL, 0, 0xFF );
 			glColorMask( GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE );
 			
 			int iLightAttenShader = CShaderManager::instance()->getShader( "light_attenuation" );
