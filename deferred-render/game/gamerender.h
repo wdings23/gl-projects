@@ -6,6 +6,18 @@
 #include "level.h"
 #include "font.h"
 
+struct LightInfo
+{
+	tVector4		mPosition;
+	tVector4		mXFormPosition;
+	tVector4		mColor;
+	float			mfSize;
+	float			mfAngle;
+	float			mfAngleInc;
+};
+
+typedef struct LightInfo tLightInfo;
+
 class CGame;
 
 class CGameRender
@@ -53,6 +65,41 @@ protected:
 							  void* pUserData1, 
 							  void* pUserData2, 
 							  void* pUserData3 );
+
+	void createSphere( void );
+	void initInstancing( void );
+
+	void drawInstances( CCamera const* pCamera, GLuint iFBO, GLuint iShader );
+	void drawLightModel( void );
+	void drawDeferredScene( void );
+
+	GLuint miDeferredFBO;
+	GLuint miPositionTexture;
+	GLuint miAlbedoTexture;
+	GLuint miDepthTexture;
+	GLuint miNormalTexture;
+
+	GLuint miLightFBO; 
+	GLuint miLightTexture;
+	GLuint miLightDepthTexture;
+	GLuint miLightStencilBuffer;
+
+	GLuint miAmbientOcclusionFBO;
+	GLuint miAmbientOcclusionTexture;
+
+	GLuint miInstanceVBO;
+	GLuint miInstanceInfoVBO;
+
+	GLuint miCubeIndexBuffer;
+
+	GLuint miSphereBuffer;
+	GLuint miSphererIndexBuffer;
+
+	int miNumSphereTris;
+	int miNumCubes;
+
+	tLightInfo* maLightInfo;
+	int miNumLights;
 
 };
 
