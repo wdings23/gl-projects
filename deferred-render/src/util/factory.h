@@ -9,7 +9,7 @@ class CFactory
 {
 public:
 	CFactory( void );
-	~CFactory( void );
+	virtual ~CFactory( void );
 
 	T* alloc( unsigned int iNumEntries );
 	void dealloc( T* pStart, unsigned int iNumEntries );

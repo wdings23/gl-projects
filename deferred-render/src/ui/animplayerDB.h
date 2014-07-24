@@ -29,7 +29,7 @@ public:
 
 public:
 	CAnimPlayerDB( void );
-	~CAnimPlayerDB( void );
+	virtual ~CAnimPlayerDB( void );
 	
 	void getFrameAtTime( tVectorAnimFrame* pResult, int iType, float fTime );
 	void addFrame( tVectorAnimFrame* pFrame, int iType );

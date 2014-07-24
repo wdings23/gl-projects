@@ -10,7 +10,7 @@ class CButton : public CControl
 {
 public:
 	CButton( void );
-	~CButton( void );
+	virtual ~CButton( void );
 	
 	virtual void draw( double fTime, int iScreenWidth, int iScreenHeight );
 	virtual CControl* inputUpdate( float fCursorX,

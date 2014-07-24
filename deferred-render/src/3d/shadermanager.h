@@ -35,7 +35,7 @@ class CShaderManager
 {
 public:
 	CShaderManager( void );
-	~CShaderManager( void );
+	virtual ~CShaderManager( void );
 	
 	unsigned int getShader( const char* szShaderName );
 	bool loadProgram( const char* szName, 

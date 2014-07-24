@@ -29,7 +29,7 @@ class CAnimPlayer
 {
 public:
     CAnimPlayer( void );
-    ~CAnimPlayer( void );
+    virtual ~CAnimPlayer( void );
     
     bool getFrame( tAnimFrame* pAnimFrame, double fTime );
     bool addFrame( const tAnimFrame* pAnimFrame );

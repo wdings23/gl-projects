@@ -24,7 +24,7 @@ class CGameRender
 {
 public:
 	CGameRender( void );
-	~CGameRender( void );
+	virtual ~CGameRender( void );
 
 	void init( void );
 	void draw( float fDT );

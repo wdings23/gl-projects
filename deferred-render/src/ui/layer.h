@@ -25,7 +25,7 @@ class CLayer
 {
 public:
 	CLayer( void );
-	~CLayer( void );
+	virtual ~CLayer( void );
 
 	void init( void );
 	void release( void );

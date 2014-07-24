@@ -35,7 +35,7 @@ public:
 	};
 public:
 	CMenuAnimPlayer( void );
-	~CMenuAnimPlayer( void );
+	virtual ~CMenuAnimPlayer( void );
 	
 	void update( float fDT );
 

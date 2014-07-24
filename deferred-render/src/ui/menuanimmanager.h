@@ -10,7 +10,7 @@ class CMenuAnimManager
 {
 public:
 	CMenuAnimManager( void );
-	~CMenuAnimManager( void );
+	virtual ~CMenuAnimManager( void );
 	
 	CAnimPlayerDB* getAnimPlayer( const char* szAnimPlayer );
 	CAnimPlayerDB* load( const char* szFileName, std::vector<CAnimPlayerDB *> *pAnimList = NULL );

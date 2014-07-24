@@ -18,7 +18,7 @@ class CFontManager
 {
 public:
     CFontManager( void );
-    ~CFontManager( void );
+    virtual ~CFontManager( void );
     
     void registerFont( const char* szFont );
     CFont* getFont( const char* szFont );

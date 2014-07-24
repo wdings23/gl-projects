@@ -57,7 +57,7 @@ public:
     
 public:
     CFont( void );
-    ~CFont( void );
+    virtual ~CFont( void );
     
     void readFile( const char* szFileName );
     void drawString( const char* szString,

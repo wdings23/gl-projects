@@ -27,7 +27,7 @@ class CCamera
 {
 public:
 	CCamera( void );
-	~CCamera( void );
+	virtual ~CCamera( void );
     
 	void update( int iScreenWidth, int iScreenHeight );
 	void setPosition( tVector4 const* pPosition );

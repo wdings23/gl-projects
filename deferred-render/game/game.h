@@ -26,7 +26,7 @@ public:
 
 public:
 	CGame( void );
-	~CGame( void );
+	virtual ~CGame( void );
 	
 	void init( void );
 
