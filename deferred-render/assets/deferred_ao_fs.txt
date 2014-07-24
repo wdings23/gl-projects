@@ -38,7 +38,7 @@ float getAmbientOcclusionValue( vec2 uv, vec2 fromOriginUVOffset, vec3 originPos
 	// invalid position, ie. unfilled pixel
 	if( rayEndPos.w < 1.0 )
 	{
-		return 0;
+		return 0.0;
 	}
 
 	vec3 diff = rayEndPos.xyz - originPos;						// ray's direction from origin
