@@ -9,8 +9,8 @@
 #define ANDROID 1
 
 #ifdef ANDROID
-#include <GLES2/gl2.h>
-#include <GLES2/gl2ext.h>
+#include <GLES3/gl3.h>
+#include <GLES3/gl3ext.h>
 
 #define OUTPUT( ... ) __android_log_print( ANDROID_LOG_INFO, "!!! WTF !!!", __VA_ARGS__ )
 #define printf( ... ) __android_log_print( ANDROID_LOG_INFO, "!!! WTF !!!", __VA_ARGS__ )
@@ -35,4 +35,9 @@
 #define UI_USE_BATCH 1
 #define USE_VBO 1
 
+#define glClearDepth glClearDepthf
+#define glDepthRange glDepthRangef
+#define glDrawElementsInstancedEXT glDrawElementsInstanced
+#define GL_RGB8_OES GL_RGB8
+#define GL_DEPTH_COMPONENT24_OES GL_DEPTH_COMPONENT24
 //#define WTFASSERT2( X, ... ) if( X == false ) { OUTPUT( "ASSERT" ); OUTPUT( #X ); OUTPUT( __VA_ARGS__ ); OUTPUT( "\n" ); assert( X ); }

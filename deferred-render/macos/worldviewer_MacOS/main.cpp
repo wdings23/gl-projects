@@ -111,7 +111,7 @@ static void render( void )
         sfLastTime = fTime;
     }
     
-    float fElapsed = (float)( fTime - sfLastTime ) * 0.001f;
+    float fElapsed = (float)( fTime - sfLastTime );
 
 	glClearColor( 0.6f, 0.6f, 0.6f, 1.0f );
 	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
