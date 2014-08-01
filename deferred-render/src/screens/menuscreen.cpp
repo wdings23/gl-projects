@@ -67,7 +67,10 @@ void CMenuScreen::update( float fDT )
 void CMenuScreen::draw( void )
 {
     assert( miShader > 0 );
-    mpLayer->draw( miShader, mfDT, 640, 960 );
+	int iScreenWidth = (int)( (float)renderGetScreenWidth() * renderGetScreenScale() );
+	int iScreenHeight = (int)( (float)renderGetScreenHeight() * renderGetScreenScale() );
+
+    mpLayer->draw( miShader, mfDT, iScreenWidth, iScreenHeight );
 }
 
 /*

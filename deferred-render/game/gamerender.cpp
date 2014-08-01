@@ -117,7 +117,7 @@ void CGameRender::draw( float fDT )
     float fScreenHeight = renderGetScreenHeight() * renderGetScreenScale();
     
 	mFont.drawString( szFPS,
-                      640.0f,
+                      fScreenWidth,
                       fScreenHeight - 40.0f,
                       20.0f,
                       fScreenWidth,
@@ -872,11 +872,12 @@ void CGameRender::initInstancing( void )
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-		glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA32F, iFBWidth, iFBHeight, 0, GL_RGBA, GL_FLOAT, NULL );
+		glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8, iFBWidth, iFBHeight, 0, GL_RGBA, GL_FLOAT, NULL );
 		glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, miAmbientOcclusionTexture, 0);
 
 		glDrawBuffers( 1, aBuffers );
 
+#if defined( VR_DISTORTION )
 		// fbo for final
 		glGenFramebuffers( 1, &miFinalFBO );
 		glBindFramebuffer( GL_DRAW_FRAMEBUFFER, miFinalFBO );
@@ -891,7 +892,8 @@ void CGameRender::initInstancing( void )
 		glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, miFinalTexture, 0);
 
 		glDrawBuffers( 1, aBuffers );
-		
+#endif // VR_DISTORTION
+
 		glBindFramebuffer( GL_DRAW_FRAMEBUFFER, 0 );
 		glBindRenderbuffer( GL_RENDERBUFFER, 0 );
 	}
@@ -1260,6 +1262,10 @@ void CGameRender::drawDeferredScene( void )
 		glUniform1i( iRandomDirTex, 3 );
 		glBindTexture( GL_TEXTURE_2D, pRandomTexture->miID );
 
+		GLint iScreenSize = glGetUniformLocation( iShader, "screenSize" );
+		WTFASSERT2( iScreenSize >= 0, "wtf" );
+		glUniform2f( iScreenSize, fScreenWidth, fScreenHeight );
+
 		int iPosition = glGetAttribLocation( iShader, "position" );
 		int iUV = glGetAttribLocation( iShader, "uv" );
 
@@ -1333,6 +1339,9 @@ void CGameRender::drawDeferredScene( void )
 		glEnableVertexAttribArray( iUV );
     
 		glDrawArrays( GL_TRIANGLE_STRIP, 0, 4 );
+
+		glDisableVertexAttribArray( iUV );
+		glDisableVertexAttribArray( iPosition );
 
 #if defined( VR_DISTORTION )
 		glBindFramebuffer( GL_DRAW_FRAMEBUFFER, 0 );

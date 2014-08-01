@@ -405,6 +405,8 @@ void animModelInstanceDrawShadow( tAnimModelInstance* pAnimModelInstance,
     glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, pAnimModelInstance->miIBO );
     glDrawElements( GL_TRIANGLES, pAnimModelInstance->miNumVBOIndices, GL_UNSIGNED_INT, (void *)0 );
      
+	glDisableVertexAttribArray( iPos );
+
     glBindBuffer( GL_ARRAY_BUFFER, 0 );
     glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );
 	

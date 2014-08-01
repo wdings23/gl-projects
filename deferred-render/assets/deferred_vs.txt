@@ -3,12 +3,14 @@ attribute vec2 uv;
 
 varying vec2 vTexCoord;
 varying vec4 vPosition;
+varying vec4 vColor;
 
 void main( void )
 {
 	vPosition = position;
-	//vTexCoord = vPosition.xy * 0.5 + 0.5;
 	vTexCoord = uv;	
+	
+	vTexCoord = position.xy * 0.5 + 0.5;
 
 	gl_Position = position;
 }

@@ -18,8 +18,8 @@ static void specialKBInput( int iKey, int iX, int iY );
 static void update( void );
 static void renderScene( void );
 
-#define WINDOW_WIDTH 640
-#define WINDOWN_HEIGHT 960
+#define WINDOW_WIDTH 500//640
+#define WINDOW_HEIGHT 500//960
 
 static bool sbZooming = false;
 static bool sbTilt = false;
@@ -33,7 +33,7 @@ int main(int argc, char* argv[])
 	glutInit( &argc, argv );
 	glutInitDisplayMode( GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA );
 	glutInitWindowPosition( 100, 100 );
-	glutInitWindowSize( WINDOW_WIDTH, WINDOWN_HEIGHT );
+	glutInitWindowSize( WINDOW_WIDTH, WINDOW_HEIGHT );
 	glutCreateWindow("Discus");
 	
 	glutDisplayFunc( render );
@@ -114,7 +114,7 @@ static void initGL( char* argv[] )
 	setFileDirectories( szDir, szWriteDir);
 
 	renderSetScreenWidth( WINDOW_WIDTH );
-	renderSetScreenHeight( WINDOWN_HEIGHT );
+	renderSetScreenHeight( WINDOW_HEIGHT );
 	renderSetScreenScale( 1.0f );
 
 	CGame::instance()->init();
@@ -153,8 +153,8 @@ static void release( void )
 */
 static void changeSize( int iW, int iH )
 {
-	gluPerspective( 45.0f, SCREEN_WIDTH / SCREEN_HEIGHT, 1.0f, 100.0f );
-	glViewport( 0, 0, SCREEN_WIDTH * 2, SCREEN_HEIGHT * 2 );
+	gluPerspective( 45.0f, WINDOW_WIDTH / WINDOW_HEIGHT, 1.0f, 100.0f );
+	glViewport( 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT );
 }
 
 /*

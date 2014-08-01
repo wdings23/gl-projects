@@ -3,11 +3,15 @@ uniform sampler2D normalTex;
 uniform sampler2D posTex;
 uniform sampler2D randomDirTex;
 
+uniform vec2 screenSize;
+
 varying vec2 vTexCoord;
 varying vec4 vOrigPosition;
 
-const float gfScreenWidth = 640.0;
-const float gfScreenHeight = 960.0; 
+varying vec4 vColor;
+
+//const float gfScreenWidth = 640.0;
+//const float gfScreenHeight = 960.0; 
 const float gfRandomTextureSize = 64.0;
 const float gfSampleDistanceScale = 5.0;
 const float gfBias = -0.2;
@@ -21,8 +25,8 @@ const float gfAmbientOcclusionIntensity = 5.0;
 */
 vec2 getRandomDirectionFromOrigin( vec2 uv )
 {
-	vec2 newUV = vec2( ( gfScreenWidth * uv.x ) / gfRandomTextureSize,
-					   ( gfScreenHeight * uv.y ) / gfRandomTextureSize );
+	vec2 newUV = vec2( ( screenSize.x * uv.x ) / gfRandomTextureSize,
+					   ( screenSize.y * uv.y ) / gfRandomTextureSize );
 
 	return normalize( texture2D( randomDirTex, newUV ).xy * 2.0 - 1.0 );
 }
@@ -64,7 +68,7 @@ void main( void )
 
 
 	vec4 albedoColor = texture2D( albedoTex, vTexCoord );
-
+	
 	// position, normal, and random direction to shoot the ray for this current position
 	vec3 position = texture2D( posTex, vTexCoord ).xyz;
 	vec3 normal = texture2D( normalTex, vTexCoord ).xyz;
