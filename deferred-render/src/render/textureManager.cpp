@@ -806,7 +806,7 @@ void CTextureManager::swapInTexture( const char* szTextureName, tTexture* pTextu
             
             if( pTexture->miBPP == 2 )
             {
-#if !defined( WINDOWS ) && !defined( MACOS )
+#if !defined( WINDOWS ) && !defined( MACOS ) && !defined( ANDROID )
                 glCompressedTexImage2D( GL_TEXTURE_2D, 
                                         0, 
                                         GL_COMPRESSED_RGBA_PVRTC_2BPPV1_IMG, 
@@ -820,7 +820,7 @@ void CTextureManager::swapInTexture( const char* szTextureName, tTexture* pTextu
             }
             else if( pTexture->miBPP == 4 )
             {
-#if !defined( WINDOWS ) && !defined( MACOS )
+#if !defined( WINDOWS ) && !defined( MACOS ) && !defined( ANDROID )
                 glCompressedTexImage2D( GL_TEXTURE_2D, 
                                         0, 
                                         GL_COMPRESSED_RGBA_PVRTC_4BPPV1_IMG, 

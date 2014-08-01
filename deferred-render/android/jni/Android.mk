@@ -18,7 +18,7 @@ $(info LOCAL_PATH = $(LOCAL_PATH))
 
 include $(CLEAR_VARS)
 
-LOCAL_MODULE    := libworldviewer
+LOCAL_MODULE    := libdeferredrender
 
 PCH_FILE := $(LOCAL_PATH)/Prefix.h
 
@@ -33,7 +33,7 @@ LOCAL_CFLAGS += -fstack-protector-all
 
 LOCAL_ARM_MODE := arm
 
-LOCAL_LDLIBS    := -llog -lGLESv2 -landroid
+LOCAL_LDLIBS    := -llog -lGLESv2 -lGLESv3 -landroid
 LOCAL_LDLIBS    += -lOpenSLES
 
 LOCAL_SHARED_LIBRARIES := libOpenSLES

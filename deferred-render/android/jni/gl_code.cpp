@@ -19,8 +19,8 @@
 #include <jni.h>
 #include <android/log.h>
 
-#include <GLES2/gl2.h>
-#include <GLES2/gl2ext.h>
+#include <GLES3/gl3.h>
+#include <GLES3/gl3ext.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -123,18 +123,18 @@ void handleTouch( float fX, float fY, int iTouchType )
 }
 
 extern "C" {
-    JNIEXPORT void JNICALL Java_com_tableflipstudios_worldviewer_GameLib_init(JNIEnv * env, jobject obj,  jint width, jint height);
-    JNIEXPORT void JNICALL Java_com_tableflipstudios_worldviewer_GameLib_step(JNIEnv * env, jobject obj);
-    JNIEXPORT void JNICALL Java_com_tableflipstudios_worldviewer_GameLib_setSaveFileDir(JNIEnv * env, jobject obj, jstring fileDir);
-    JNIEXPORT void JNICALL Java_com_tableflipstudios_worldviewer_GameLib_touchBegan(JNIEnv * env, jobject obj, jint iX, jint iY, jint iID );
-    JNIEXPORT void JNICALL Java_com_tableflipstudios_worldviewer_GameLib_touchMoved(JNIEnv * env, jobject obj, jint iX, jint iY, jint iID );
-    JNIEXPORT void JNICALL Java_com_tableflipstudios_worldviewer_GameLib_touchEnded(JNIEnv * env, jobject obj, jint iX, jint iY, jint iID );
-    JNIEXPORT void JNICALL Java_com_tableflipstudios_worldviewer_GameLib_setAssetManager(JNIEnv* env,
+    JNIEXPORT void JNICALL Java_com_tableflipstudios_deferredrender_GameLib_init(JNIEnv * env, jobject obj,  jint width, jint height);
+    JNIEXPORT void JNICALL Java_com_tableflipstudios_deferredrender_GameLib_step(JNIEnv * env, jobject obj);
+    JNIEXPORT void JNICALL Java_com_tableflipstudios_deferredrender_GameLib_setSaveFileDir(JNIEnv * env, jobject obj, jstring fileDir);
+    JNIEXPORT void JNICALL Java_com_tableflipstudios_deferredrender_GameLib_touchBegan(JNIEnv * env, jobject obj, jint iX, jint iY, jint iID );
+    JNIEXPORT void JNICALL Java_com_tableflipstudios_deferredrender_GameLib_touchMoved(JNIEnv * env, jobject obj, jint iX, jint iY, jint iID );
+    JNIEXPORT void JNICALL Java_com_tableflipstudios_deferredrender_GameLib_touchEnded(JNIEnv * env, jobject obj, jint iX, jint iY, jint iID );
+    JNIEXPORT void JNICALL Java_com_tableflipstudios_deferredrender_GameLib_setAssetManager(JNIEnv* env,
     																	jobject obj,
     																	jobject assetManager );
 };
 
-JNIEXPORT void JNICALL Java_com_tableflipstudios_worldviewer_GameLib_init(JNIEnv * env, jobject obj,  jint width, jint height)
+JNIEXPORT void JNICALL Java_com_tableflipstudios_deferredrender_GameLib_init(JNIEnv * env, jobject obj,  jint width, jint height)
 {
     OUTPUT( "%s : %d\n", __FILE__, __LINE__ );
     setupGraphics(width, height);
@@ -148,7 +148,7 @@ JNIEXPORT void JNICALL Java_com_tableflipstudios_worldviewer_GameLib_init(JNIEnv
     sTouchQueue.clear();
 }
 
-JNIEXPORT void JNICALL Java_com_tableflipstudios_worldviewer_GameLib_step(JNIEnv * env, jobject obj)
+JNIEXPORT void JNICALL Java_com_tableflipstudios_deferredrender_GameLib_step(JNIEnv * env, jobject obj)
 {
     static double sfLastTime = 0.0f;
     static float sfTime = 0.0f;
@@ -185,7 +185,7 @@ JNIEXPORT void JNICALL Java_com_tableflipstudios_worldviewer_GameLib_step(JNIEnv
     sfLastTime = fCurrTime;
 }
 
-JNIEXPORT void JNICALL Java_com_tableflipstudios_worldviewer_GameLib_setSaveFileDir(JNIEnv * env, jobject obj, jstring fileDir)
+JNIEXPORT void JNICALL Java_com_tableflipstudios_deferredrender_GameLib_setSaveFileDir(JNIEnv * env, jobject obj, jstring fileDir)
 {
     const char* szFileDir = env->GetStringUTFChars(fileDir, 0);
     OUTPUT( "!!! szFileDir = %s !!!\n", szFileDir );
@@ -201,7 +201,7 @@ JNIEXPORT void JNICALL Java_com_tableflipstudios_worldviewer_GameLib_setSaveFile
 /*
 **
 */
-JNIEXPORT void JNICALL Java_com_tableflipstudios_worldviewer_GameLib_touchBegan(JNIEnv * env, jobject obj, jint iX, jint iY, jint iID )
+JNIEXPORT void JNICALL Java_com_tableflipstudios_deferredrender_GameLib_touchBegan(JNIEnv * env, jobject obj, jint iX, jint iY, jint iID )
 {
     OUTPUT( "touch began id %d ( %d, %d )\n", iX, iY, iID );
 
@@ -216,7 +216,7 @@ JNIEXPORT void JNICALL Java_com_tableflipstudios_worldviewer_GameLib_touchBegan(
 /*
 **
 */
-JNIEXPORT void JNICALL Java_com_tableflipstudios_worldviewer_GameLib_touchMoved(JNIEnv * env, jobject obj, jint iX, jint iY, jint iID )
+JNIEXPORT void JNICALL Java_com_tableflipstudios_deferredrender_GameLib_touchMoved(JNIEnv * env, jobject obj, jint iX, jint iY, jint iID )
 {
     OUTPUT( "touch moved id %d ( %d, %d )\n", iX, iY, iID );
     
@@ -231,7 +231,7 @@ JNIEXPORT void JNICALL Java_com_tableflipstudios_worldviewer_GameLib_touchMoved(
 /*
 **
 */
-JNIEXPORT void JNICALL Java_com_tableflipstudios_worldviewer_GameLib_touchEnded(JNIEnv * env, jobject obj, jint iX, jint iY, jint iID )
+JNIEXPORT void JNICALL Java_com_tableflipstudios_deferredrender_GameLib_touchEnded(JNIEnv * env, jobject obj, jint iX, jint iY, jint iID )
 {
     OUTPUT( "touch ended id %d ( %d, %d )\n", iX, iY, iID );
     
@@ -246,7 +246,7 @@ JNIEXPORT void JNICALL Java_com_tableflipstudios_worldviewer_GameLib_touchEnded(
 /*
 **
 */
-JNIEXPORT void JNICALL Java_com_tableflipstudios_worldviewer_GameLib_setAssetManager(JNIEnv* env,
+JNIEXPORT void JNICALL Java_com_tableflipstudios_deferredrender_GameLib_setAssetManager(JNIEnv* env,
 																	jobject obj,
 																	jobject assetManager )
 {

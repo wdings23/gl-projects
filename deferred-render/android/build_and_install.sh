@@ -7,5 +7,5 @@ ndk-build NDK_DEBUG=1 APP_OPTIM=debug -j4 #V=1
 cd ..
 ant debug
 
-adb uninstall com.tableflipstudios.worldviewer
+adb uninstall com.tableflipstudios.deferredrender
 adb install ./bin/GameActivity-debug.apk
