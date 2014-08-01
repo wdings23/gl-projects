@@ -19,7 +19,8 @@ CGame* CGame::instance( void )
 /*
 **
 */
-CGame::CGame( void )
+CGame::CGame( void ) :
+	mbVRView(false)
 {
 }
 

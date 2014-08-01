@@ -18,8 +18,8 @@ static void specialKBInput( int iKey, int iX, int iY );
 static void update( void );
 static void renderScene( void );
 
-#define WINDOW_WIDTH 500//640
-#define WINDOW_HEIGHT 500//960
+#define WINDOW_WIDTH 1920//640
+#define WINDOW_HEIGHT 1080//960
 
 static bool sbZooming = false;
 static bool sbTilt = false;
@@ -240,6 +240,25 @@ static void keyboardInput( unsigned char cKey, int iX, int iY )
 		case 's':
 			{
 			
+			}
+			break;
+
+		case 'f':
+			{
+				glutGameModeString("1920x1080:32");
+				glutEnterGameMode();
+			}
+			break;
+
+		case 'F':
+			{
+				glutReshapeWindow( WINDOW_WIDTH, WINDOW_HEIGHT );
+			}
+			break;
+
+		case 'v':
+			{
+				CGame::instance()->toggleVRView();
 			}
 			break;
 

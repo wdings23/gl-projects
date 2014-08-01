@@ -42,7 +42,8 @@ public:
 	void tiltCamera( float fDPos );
 
     inline void clearInputPos( void )   { mLastTouch.fX = mLastTouch.fY = -1.0f; }
-    
+	inline void toggleVRView( void ) { mbVRView = !mbVRView; mGameRender.setVRView( mbVRView ); }
+
 protected:
 	int						miPrevState;
 	int						miState;
@@ -59,6 +60,8 @@ protected:
 	char					mszSceneFileName[256];
 
 	tVector2				mLastTouch;
+
+	bool					mbVRView;
 
 public:
 	static CGame*					instance( void );

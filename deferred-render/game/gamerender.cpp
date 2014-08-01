@@ -15,6 +15,14 @@
 
 #define VR_DISTORTION 1
 
+enum
+{
+	EYE_LEFT = 0,
+	EYE_RIGHT,
+
+	NUM_EYES,
+};
+
 struct LevelJobData
 {
     tLevel*         mpLevel;
@@ -43,13 +51,11 @@ struct InstanceInfo
 
 typedef struct InstanceInfo tInstanceInfo;
 
-static CCamera const* spCamera;
-
-
 /*
 **
 */
-CGameRender::CGameRender( void )
+CGameRender::CGameRender( void ) :
+	mbVRView( false )
 {
 }
 
@@ -94,20 +100,70 @@ void CGameRender::init( void )
 */
 void CGameRender::draw( float fDT )
 {
-	spCamera = mpCamera;
-		
+	float fEyeDistance = 0.0f;
+	if( mbVRView )
+	{
+		fEyeDistance = 0.7f;
+	}
+
+	tVector4 const* pLookAt = mpCamera->getLookAt();
+	tVector4 const* pPos = mpCamera->getPosition();
+
+	tVector4 leftLookAt, leftPos, rightLookAt, rightPos;
+	memcpy( &leftLookAt, pLookAt, sizeof( tVector4 ) );
+	memcpy( &leftPos, pPos, sizeof( tVector4 ) );
+	memcpy( &rightLookAt, pLookAt, sizeof( tVector4 ) );
+	memcpy( &rightPos, pPos, sizeof( tVector4 ) );
+
+	leftPos.fX -= fEyeDistance;
+	leftLookAt.fX -= fEyeDistance;
+
+	rightPos.fX += fEyeDistance;
+	rightLookAt.fX += fEyeDistance; 
+
+	CCamera leftCamera, rightCamera;
+	leftCamera.setPosition( &leftPos );
+	leftCamera.setLookAt( &leftLookAt );
+
+	rightCamera.setPosition( &rightPos );
+	rightCamera.setLookAt( &rightLookAt );
+
+	int iScreenWidth = (int)( (float)renderGetScreenWidth() * renderGetScreenScale() );
+	int iScreenHeight = (int)( (float)renderGetScreenHeight() * renderGetScreenScale() );
+
+	leftCamera.update( iScreenWidth, iScreenHeight );
+	rightCamera.update( iScreenWidth, iScreenHeight );
+
+	glViewport( 0, 0, iScreenWidth / 2, iScreenHeight / 2 );
+
 	// get the color, position, normal and depth textures
 	GLuint iInstanceShader = CShaderManager::instance()->getShader( "instance_deferred" );
 	WTFASSERT2( iInstanceShader > 0, "invalid shader" );
-	glBindFramebuffer( GL_DRAW_FRAMEBUFFER, miDeferredFBO );
+	glBindFramebuffer( GL_DRAW_FRAMEBUFFER, miLeftDeferredFBO );
 	glClearColor( 0.0f, 0.0f, 0.0f, 0.0f );
 	glClear( GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT );
-	drawInstances( mpCamera, miDeferredFBO, iInstanceShader );
+	drawInstances( &leftCamera, miLeftDeferredFBO, iInstanceShader );
 	glBindFramebuffer( GL_DRAW_FRAMEBUFFER, 0 );
 	
-	drawLightModel();
-	drawDeferredScene();
+	drawLightModel( &leftCamera, EYE_LEFT );
+	drawDeferredScene( EYE_LEFT );
+
+	if( mbVRView )
+	{
+		// get the color, position, normal and depth textures
+		glBindFramebuffer( GL_DRAW_FRAMEBUFFER, miRightDeferredFBO );
+		glClearColor( 0.0f, 0.0f, 0.0f, 0.0f );
+		glClear( GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT );
+		drawInstances( &rightCamera, miRightDeferredFBO, iInstanceShader );
+		glBindFramebuffer( GL_DRAW_FRAMEBUFFER, 0 );
 	
+		drawLightModel( &rightCamera, EYE_RIGHT );
+		drawDeferredScene( EYE_RIGHT );
+	}
+
+	glViewport( 0, 0, iScreenWidth, iScreenHeight );
+	drawScene();
+
 	glDisable( GL_CULL_FACE );
 
     char szFPS[64];
@@ -783,113 +839,113 @@ void CGameRender::initInstancing( void )
     
 	// deferred fbo textures
 	{
-		int iFBWidth = (int)( (float)renderGetScreenWidth() * renderGetScreenScale() );
-		int iFBHeight = (int)( (float)renderGetScreenHeight() * renderGetScreenScale() );
+		int iFBWidth = (int)( (float)renderGetScreenWidth() * renderGetScreenScale() ) / 2;
+		int iFBHeight = (int)( (float)renderGetScreenHeight() * renderGetScreenScale() ) / 2;
 
-		glGenFramebuffers( 1, &miDeferredFBO );
-		glBindFramebuffer( GL_DRAW_FRAMEBUFFER, miDeferredFBO );
+		glGenFramebuffers( 1, &miLeftDeferredFBO );
+		glBindFramebuffer( GL_DRAW_FRAMEBUFFER, miLeftDeferredFBO );
         
 		// albedo 
-		glGenTextures( 1, &miAlbedoTexture );
-		glBindTexture( GL_TEXTURE_2D, miAlbedoTexture );
+		glGenTextures( 1, &miLeftAlbedoTexture );
+		glBindTexture( GL_TEXTURE_2D, miLeftAlbedoTexture );
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
 		glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA32F, iFBWidth, iFBHeight, 0, GL_RGBA, GL_FLOAT, NULL );
-        glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, miAlbedoTexture, 0);
+        glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, miLeftAlbedoTexture, 0);
 		
 		// position 
-		glGenTextures( 1, &miPositionTexture );
-		glBindTexture( GL_TEXTURE_2D, miPositionTexture );
+		glGenTextures( 1, &miLeftPositionTexture );
+		glBindTexture( GL_TEXTURE_2D, miLeftPositionTexture );
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
 		glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA32F, iFBWidth, iFBHeight, 0, GL_RGBA, GL_FLOAT, NULL );
-		glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, miPositionTexture, 0);
+		glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, miLeftPositionTexture, 0);
 
 		// normal
-		glGenTextures( 1, &miNormalTexture );
-		glBindTexture( GL_TEXTURE_2D, miNormalTexture );
+		glGenTextures( 1, &miLeftNormalTexture );
+		glBindTexture( GL_TEXTURE_2D, miLeftNormalTexture );
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
 		glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA32F, iFBWidth, iFBHeight, 0, GL_RGBA, GL_FLOAT, NULL );
-		glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, miNormalTexture, 0);
+		glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, miLeftNormalTexture, 0);
 
 		// depth
-		glGenTextures( 1, &miDepthTexture );
-		glBindTexture( GL_TEXTURE_2D, miDepthTexture );
+		glGenTextures( 1, &miLeftDepthTexture );
+		glBindTexture( GL_TEXTURE_2D, miLeftDepthTexture );
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
 		glTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, iFBWidth, iFBHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL );
-		glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, miDepthTexture, 0);
+		glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, miLeftDepthTexture, 0);
 		
 		GLenum aBuffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
 		glDrawBuffers( 3, aBuffers );
 		
 		// fbo for spot lights
-		glGenFramebuffers( 1, &miLightFBO );
-		glBindFramebuffer( GL_DRAW_FRAMEBUFFER, miLightFBO );
+		glGenFramebuffers( 1, &miLeftLightFBO );
+		glBindFramebuffer( GL_DRAW_FRAMEBUFFER, miLeftLightFBO );
 
-		glGenTextures( 1, &miLightTexture );
-		glBindTexture( GL_TEXTURE_2D, miLightTexture );
+		glGenTextures( 1, &miLeftLightTexture );
+		glBindTexture( GL_TEXTURE_2D, miLeftLightTexture );
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
 		glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA32F, iFBWidth, iFBHeight, 0, GL_RGBA, GL_FLOAT, NULL );
-		glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, miLightTexture, 0);
+		glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, miLeftLightTexture, 0);
 		
-		glGenTextures( 1, &miLightDepthTexture );
-		glBindTexture( GL_TEXTURE_2D, miLightDepthTexture );
+		glGenTextures( 1, &miLeftLightDepthTexture );
+		glBindTexture( GL_TEXTURE_2D, miLeftLightDepthTexture );
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
 		glTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, iFBWidth, iFBHeight, 0, GL_RGBA, GL_FLOAT, NULL );
-		glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, miLightDepthTexture, 0);
+		glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, miLeftLightDepthTexture, 0);
 
-		glGenRenderbuffers( 1, &miLightStencilBuffer );
-		glBindRenderbuffer( GL_RENDERBUFFER, miLightStencilBuffer );
+		glGenRenderbuffers( 1, &miLeftLightStencilBuffer );
+		glBindRenderbuffer( GL_RENDERBUFFER, miLeftLightStencilBuffer );
 		glRenderbufferStorage( GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, iFBWidth, iFBHeight );
-		glFramebufferRenderbuffer( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, miLightStencilBuffer );
-		glFramebufferRenderbuffer( GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, miLightStencilBuffer );
+		glFramebufferRenderbuffer( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, miLeftLightStencilBuffer );
+		glFramebufferRenderbuffer( GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, miLeftLightStencilBuffer );
 		
 		glDrawBuffers( 1, aBuffers );
 
 		// fbo for ambient occlusion
-		glGenFramebuffers( 1, &miAmbientOcclusionFBO );
-		glBindFramebuffer( GL_DRAW_FRAMEBUFFER, miAmbientOcclusionFBO );
+		glGenFramebuffers( 1, &miLeftAmbientOcclusionFBO );
+		glBindFramebuffer( GL_DRAW_FRAMEBUFFER, miLeftAmbientOcclusionFBO );
 
-		glGenTextures( 1, &miAmbientOcclusionTexture );
-		glBindTexture( GL_TEXTURE_2D, miAmbientOcclusionTexture );
+		glGenTextures( 1, &miLeftAmbientOcclusionTexture );
+		glBindTexture( GL_TEXTURE_2D, miLeftAmbientOcclusionTexture );
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
 		glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8, iFBWidth, iFBHeight, 0, GL_RGBA, GL_FLOAT, NULL );
-		glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, miAmbientOcclusionTexture, 0);
+		glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, miLeftAmbientOcclusionTexture, 0);
 
 		glDrawBuffers( 1, aBuffers );
 
 #if defined( VR_DISTORTION )
 		// fbo for final
-		glGenFramebuffers( 1, &miFinalFBO );
-		glBindFramebuffer( GL_DRAW_FRAMEBUFFER, miFinalFBO );
+		glGenFramebuffers( 1, &miLeftFinalFBO );
+		glBindFramebuffer( GL_DRAW_FRAMEBUFFER, miLeftFinalFBO );
 
-		glGenTextures( 1, &miFinalTexture );
-		glBindTexture( GL_TEXTURE_2D, miFinalTexture );
+		glGenTextures( 1, &miLeftFinalTexture );
+		glBindTexture( GL_TEXTURE_2D, miLeftFinalTexture );
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
 		glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8, iFBWidth, iFBHeight, 0, GL_RGBA, GL_FLOAT, NULL );
-		glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, miFinalTexture, 0);
+		glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, miLeftFinalTexture, 0);
 
 		glDrawBuffers( 1, aBuffers );
 #endif // VR_DISTORTION
@@ -897,6 +953,127 @@ void CGameRender::initInstancing( void )
 		glBindFramebuffer( GL_DRAW_FRAMEBUFFER, 0 );
 		glBindRenderbuffer( GL_RENDERBUFFER, 0 );
 	}
+
+#if defined( VR_DISTORTION )
+	// deferred fbo textures
+	{
+		int iFBWidth = (int)( (float)renderGetScreenWidth() * renderGetScreenScale() ) / 2;
+		int iFBHeight = (int)( (float)renderGetScreenHeight() * renderGetScreenScale() ) / 2;
+
+		glGenFramebuffers( 1, &miRightDeferredFBO );
+		glBindFramebuffer( GL_DRAW_FRAMEBUFFER, miRightDeferredFBO );
+        
+		// albedo 
+		glGenTextures( 1, &miRightAlbedoTexture );
+		glBindTexture( GL_TEXTURE_2D, miRightAlbedoTexture );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+		glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA32F, iFBWidth, iFBHeight, 0, GL_RGBA, GL_FLOAT, NULL );
+        glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, miRightAlbedoTexture, 0);
+		
+		// position 
+		glGenTextures( 1, &miRightPositionTexture );
+		glBindTexture( GL_TEXTURE_2D, miRightPositionTexture );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+		glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA32F, iFBWidth, iFBHeight, 0, GL_RGBA, GL_FLOAT, NULL );
+		glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, miRightPositionTexture, 0);
+
+		// normal
+		glGenTextures( 1, &miRightNormalTexture );
+		glBindTexture( GL_TEXTURE_2D, miRightNormalTexture );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+		glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA32F, iFBWidth, iFBHeight, 0, GL_RGBA, GL_FLOAT, NULL );
+		glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, miRightNormalTexture, 0);
+
+		// depth
+		glGenTextures( 1, &miRightDepthTexture );
+		glBindTexture( GL_TEXTURE_2D, miRightDepthTexture );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+		glTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, iFBWidth, iFBHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL );
+		glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, miRightDepthTexture, 0);
+		
+		GLenum aBuffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
+		glDrawBuffers( 3, aBuffers );
+		
+		// fbo for spot lights
+		glGenFramebuffers( 1, &miRightLightFBO );
+		glBindFramebuffer( GL_DRAW_FRAMEBUFFER, miRightLightFBO );
+
+		glGenTextures( 1, &miRightLightTexture );
+		glBindTexture( GL_TEXTURE_2D, miRightLightTexture );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+		glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA32F, iFBWidth, iFBHeight, 0, GL_RGBA, GL_FLOAT, NULL );
+		glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, miRightLightTexture, 0);
+		
+		glGenTextures( 1, &miRightLightDepthTexture );
+		glBindTexture( GL_TEXTURE_2D, miRightLightDepthTexture );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+		glTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, iFBWidth, iFBHeight, 0, GL_RGBA, GL_FLOAT, NULL );
+		glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, miRightLightDepthTexture, 0);
+
+		glGenRenderbuffers( 1, &miRightLightStencilBuffer );
+		glBindRenderbuffer( GL_RENDERBUFFER, miRightLightStencilBuffer );
+		glRenderbufferStorage( GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, iFBWidth, iFBHeight );
+		glFramebufferRenderbuffer( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, miRightLightStencilBuffer );
+		glFramebufferRenderbuffer( GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, miRightLightStencilBuffer );
+		
+		glDrawBuffers( 1, aBuffers );
+
+		// fbo for ambient occlusion
+		glGenFramebuffers( 1, &miRightAmbientOcclusionFBO );
+		glBindFramebuffer( GL_DRAW_FRAMEBUFFER, miRightAmbientOcclusionFBO );
+
+		glGenTextures( 1, &miRightAmbientOcclusionTexture );
+		glBindTexture( GL_TEXTURE_2D, miRightAmbientOcclusionTexture );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+		glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8, iFBWidth, iFBHeight, 0, GL_RGBA, GL_FLOAT, NULL );
+		glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, miRightAmbientOcclusionTexture, 0);
+
+		glDrawBuffers( 1, aBuffers );
+
+#if defined( VR_DISTORTION )
+		// fbo for final
+		glGenFramebuffers( 1, &miRightFinalFBO );
+		glBindFramebuffer( GL_DRAW_FRAMEBUFFER, miRightFinalFBO );
+
+		glGenTextures( 1, &miRightFinalTexture );
+		glBindTexture( GL_TEXTURE_2D, miRightFinalTexture );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+		glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8, iFBWidth, iFBHeight, 0, GL_RGBA, GL_FLOAT, NULL );
+		glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, miRightFinalTexture, 0);
+
+		printf( "%d\n", miRightFinalTexture );
+
+		glDrawBuffers( 1, aBuffers );
+#endif // VR_DISTORTION
+
+		glBindFramebuffer( GL_DRAW_FRAMEBUFFER, 0 );
+		glBindRenderbuffer( GL_RENDERBUFFER, 0 );
+	}
+#endif // VR_DISTORTION
 
 	createSphere();
 	
@@ -1008,7 +1185,7 @@ void CGameRender::drawInstances( CCamera const* pCamera, GLuint iFBO, GLuint iSh
 /*
 ** draw light models into the light texture to be blended with the final render target
 */
-void CGameRender::drawLightModel( void )
+void CGameRender::drawLightModel( CCamera const* pCamera, int iEye )
 {
 	GLuint iInstanceShader = CShaderManager::instance()->getShader( "instance_deferred" );
 	WTFASSERT2( iInstanceShader > 0, "invalid shader" );
@@ -1016,7 +1193,12 @@ void CGameRender::drawLightModel( void )
 	GLuint iLightShader = CShaderManager::instance()->getShader( "light_model" );
 	WTFASSERT2( iLightShader > 0, "invalid shader" );
 
-	GLuint iFBO = miLightFBO;
+	GLuint iFBO = miLeftLightFBO;
+	if( iEye == EYE_RIGHT )
+	{
+		iFBO = miRightLightFBO;
+	}
+
 	//GLuint iFBO = 0;
 	
 	glCullFace( GL_BACK );
@@ -1027,7 +1209,7 @@ void CGameRender::drawLightModel( void )
 
 	// draw scene for depth values
 	glColorMask( GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE );	// don't write to color
-	drawInstances( spCamera, iFBO, iInstanceShader );
+	drawInstances( pCamera, iFBO, iInstanceShader );
 
 	for( int i = 0; i < miNumLights; i++ ) 
 	{
@@ -1045,8 +1227,8 @@ void CGameRender::drawLightModel( void )
 	}
 
 	// matrix
-	tMatrix44 const* pViewMatrix = spCamera->getViewMatrix();
-	tMatrix44 const* pProjMatrix = spCamera->getProjectionMatrix();
+	tMatrix44 const* pViewMatrix = pCamera->getViewMatrix();
+	tMatrix44 const* pProjMatrix = pCamera->getProjectionMatrix();
 
 	glEnable( GL_BLEND );
 	glBlendFunc( GL_SRC_ALPHA, GL_ONE );
@@ -1060,11 +1242,17 @@ void CGameRender::drawLightModel( void )
         glBindTexture( GL_TEXTURE_2D, 0 );
     }
     
+	GLuint iPositionTexture = miLeftPositionTexture;
+	if( iEye == EYE_RIGHT )
+	{
+		iPositionTexture = miRightPositionTexture;
+	}
+
     // position texture
     GLuint iPosTex = glGetUniformLocation( iLightShader, "posTex" );
     glActiveTexture( GL_TEXTURE0 );
     glUniform1i( iPosTex, 0 );
-    glBindTexture( GL_TEXTURE_2D, miPositionTexture );
+    glBindTexture( GL_TEXTURE_2D, miLeftPositionTexture );
     
 	for( int i = 0; i < miNumLights; i++ )
 	{
@@ -1195,7 +1383,7 @@ void CGameRender::drawLightModel( void )
 /*
 **
 */
-void CGameRender::drawDeferredScene( void )
+void CGameRender::drawDeferredScene( int iEye )
 {
 	// full screen quad
 	tVector4 aScreenVerts[] =
@@ -1226,9 +1414,34 @@ void CGameRender::drawDeferredScene( void )
 	float fScreenHeight = (float)renderGetScreenHeight() * renderGetScreenScale();
 	float fAspectRatio = fScreenWidth / fScreenHeight;
 
+	// textures
+	GLuint iAmbientOcclusionFBO = miLeftAmbientOcclusionFBO;
+	GLuint iAlbedoTexture = miLeftAlbedoTexture;
+	GLuint iNormalTexture = miLeftNormalTexture;
+	GLuint iLightTexture = miLeftLightTexture;
+	GLuint iDepthTexture = miLeftDepthTexture;
+	GLuint iPositionTexture = miLeftPositionTexture;
+	GLuint iAmbientOcclusionTexture = miLeftAmbientOcclusionTexture;
+	GLuint iFinalFBO = miLeftFinalFBO;
+	GLuint iFinalTexture = miLeftFinalTexture;
+
+	if( iEye == EYE_RIGHT )
+	{
+		iAmbientOcclusionFBO = miRightAmbientOcclusionFBO;
+		iAlbedoTexture = miRightAlbedoTexture;
+		iNormalTexture = miRightNormalTexture;
+		iLightTexture = miRightLightTexture;
+		iDepthTexture = miRightDepthTexture;
+		iPositionTexture = miRightPositionTexture;
+		iAmbientOcclusionTexture = miRightAmbientOcclusionTexture;
+		iFinalFBO = miRightFinalFBO;
+		iFinalTexture = miRightFinalTexture;
+	}
+	
+	
 	// create ambient occlusion texture 
 	{
-		glBindFramebuffer( GL_DRAW_FRAMEBUFFER, miAmbientOcclusionFBO );
+		glBindFramebuffer( GL_DRAW_FRAMEBUFFER, iAmbientOcclusionFBO );
         //glBindFramebuffer( GL_DRAW_FRAMEBUFFER, 0 );
         
 		glClearColor( 0.0f, 0.0f, 0.0f, 0.0f );
@@ -1243,17 +1456,17 @@ void CGameRender::drawDeferredScene( void )
 		GLuint iAlbedoTex = glGetUniformLocation( iShader, "albedoTex" );
 		glActiveTexture( GL_TEXTURE0 );
 		glUniform1i( iAlbedoTex, 0 );
-		glBindTexture( GL_TEXTURE_2D, miAlbedoTexture );
+		glBindTexture( GL_TEXTURE_2D, iAlbedoTexture );
 
 		GLuint iNormalTex = glGetUniformLocation( iShader, "normalTex" );
 		glActiveTexture( GL_TEXTURE1 );
 		glUniform1i( iNormalTex, 1 );
-		glBindTexture( GL_TEXTURE_2D, miNormalTexture );
+		glBindTexture( GL_TEXTURE_2D, iNormalTexture );
 
 		GLuint iPosTex = glGetUniformLocation( iShader, "posTex" );
 		glActiveTexture( GL_TEXTURE2 );
 		glUniform1i( iPosTex, 2 );
-		glBindTexture( GL_TEXTURE_2D, miPositionTexture );
+		glBindTexture( GL_TEXTURE_2D, iPositionTexture );
 
 		tTexture* pRandomTexture = CTextureManager::instance()->getTexture( "random_dir.tga" );
 
@@ -1286,7 +1499,7 @@ void CGameRender::drawDeferredScene( void )
 	// draw final scene
 	{
 #if defined( VR_DISTORTION )
-		glBindFramebuffer( GL_DRAW_FRAMEBUFFER, miFinalFBO );
+		glBindFramebuffer( GL_DRAW_FRAMEBUFFER, iFinalFBO );
 		glClearColor( 0.0f, 0.0f, 0.0f, 0.0f );
 		glClear( GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
 #endif // VR_DISTORTION
@@ -1302,32 +1515,32 @@ void CGameRender::drawDeferredScene( void )
 		GLuint iAlbedoTex = glGetUniformLocation( iShader, "albedoTex" );
 		glActiveTexture( GL_TEXTURE0 );
 		glUniform1i( iAlbedoTex, 0 );
-		glBindTexture( GL_TEXTURE_2D, miAlbedoTexture );
+		glBindTexture( GL_TEXTURE_2D, iAlbedoTexture );
 
 		GLuint iNormalTex = glGetUniformLocation( iShader, "normalTex" );
 		glActiveTexture( GL_TEXTURE1 );
 		glUniform1i( iNormalTex, 1 );
-		glBindTexture( GL_TEXTURE_2D, miNormalTexture );
+		glBindTexture( GL_TEXTURE_2D, iNormalTexture );
 
 		GLuint iLightTex = glGetUniformLocation( iShader, "lightTex" );
 		glActiveTexture( GL_TEXTURE2 );
 		glUniform1i( iLightTex, 2 );
-		glBindTexture( GL_TEXTURE_2D, miLightTexture );
+		glBindTexture( GL_TEXTURE_2D, iLightTexture );
 
 		GLuint iDepthTex = glGetUniformLocation( iShader, "depthTex" );
 		glActiveTexture( GL_TEXTURE3 );
 		glUniform1i( iDepthTex, 3 );
-		glBindTexture( GL_TEXTURE_2D, miDepthTexture );
+		glBindTexture( GL_TEXTURE_2D, iDepthTexture );
 
 		GLuint iPosTex = glGetUniformLocation( iShader, "posTex" );
 		glActiveTexture( GL_TEXTURE4 );
 		glUniform1i( iPosTex, 4 );
-		glBindTexture( GL_TEXTURE_2D, miPositionTexture );
+		glBindTexture( GL_TEXTURE_2D, iPositionTexture );
 
 		GLuint iAmbientOcclusionTex = glGetUniformLocation( iShader, "ambientOcclusionTex" );
 		glActiveTexture( GL_TEXTURE5 );
 		glUniform1i( iAmbientOcclusionTex, 5 );
-		glBindTexture( GL_TEXTURE_2D, miAmbientOcclusionTexture );
+		glBindTexture( GL_TEXTURE_2D, iAmbientOcclusionTexture );
 
 		int iPosition = glGetAttribLocation( iShader, "position" );
 		int iUV = glGetAttribLocation( iShader, "uv" );
@@ -1348,9 +1561,41 @@ void CGameRender::drawDeferredScene( void )
 #endif // VR_DISTORTION
 
 	}
+}
 
+/*
+**
+*/
+void CGameRender::drawScene( void )
+{
 #if defined( VR_DISTORTION )
+	float fScreenWidth = (float)renderGetScreenWidth() * renderGetScreenScale();
+	float fScreenHeight = (float)renderGetScreenHeight() * renderGetScreenScale();
+
+	tVector2 aTexCoords[] =
+	{
+		{ 0.0f, 0.0f },
+		{ 1.0, 0.0f },
+		{ 0.0f, 1.0f },
+		{ 1.0f, 1.0f }
+	};
+
+	tVector4 aColors[] = 
+	{
+		{ 1.0f, 1.0f, 1.0f, 1.0f },
+		{ 1.0f, 1.0f, 1.0f, 1.0f },
+		{ 1.0f, 1.0f, 1.0f, 1.0f },
+		{ 1.0f, 1.0f, 1.0f, 1.0f },
+	};
+
+	int iNumEyes = 1;
+	if( mbVRView )
+	{
+		iNumEyes = NUM_EYES;
+	}
+
 	// draw with distortion
+	for( int iEye = 0; iEye < iNumEyes; iEye++ )
 	{
 		tVector2 lensCenter = 
 		{
@@ -1358,7 +1603,18 @@ void CGameRender::drawDeferredScene( void )
 			fScreenHeight * 0.5f,
 		};
 
-		int iShader = CShaderManager::instance()->getShader( "vr_distortion" );
+		GLuint iFinalTexture = miLeftFinalTexture;
+		if( iEye == EYE_RIGHT )
+		{
+			iFinalTexture = miRightFinalTexture;
+		}
+
+		int iShader = CShaderManager::instance()->getShader( "ui" );
+		if( mbVRView )
+		{
+			iShader = CShaderManager::instance()->getShader( "vr_distortion" );
+		}
+
 		WTFASSERT2( iShader > 0, "invalid shader" );
 
 		glUseProgram( iShader );
@@ -1374,12 +1630,38 @@ void CGameRender::drawDeferredScene( void )
 		GLuint iAlbedoTex = glGetUniformLocation( iShader, "texture" );
 		glActiveTexture( GL_TEXTURE0 );
 		glUniform1i( iAlbedoTex, 0 );
-		glBindTexture( GL_TEXTURE_2D, miFinalTexture );
+		glBindTexture( GL_TEXTURE_2D, iFinalTexture );
 
 		// position and uv
 		int iPosition = glGetAttribLocation( iShader, "position" );
 		int iUV = glGetAttribLocation( iShader, "textureUV" );
 		int iColor = glGetAttribLocation( iShader, "color" );
+
+		tVector4 aScreenVerts[] = 
+		{
+			{ -1.0f, -1.0f, 0.0f, 1.0f },
+			{ 1.0f, -1.0f, 0.0f, 1.0f },
+			{ -1.0f, 1.0f, 0.0f, 1.0f },
+			{ 1.0f, 1.0f, 0.0f, 1.0f },
+		};
+
+		if( mbVRView )
+		{
+			if( iEye == EYE_LEFT )
+			{
+				aScreenVerts[0].fX = -1.0f;
+				aScreenVerts[1].fX = 0.0f;
+				aScreenVerts[2].fX = -1.0f;
+				aScreenVerts[3].fX = 0.0f;
+			}
+			else
+			{
+				aScreenVerts[0].fX = 0.0f;
+				aScreenVerts[1].fX = 1.0f;
+				aScreenVerts[2].fX = 0.0f;
+				aScreenVerts[3].fX = 1.0f;
+			}
+		}
 
 		// data
 		glVertexAttribPointer( iPosition, 4, GL_FLOAT, GL_FALSE, 0, aScreenVerts );

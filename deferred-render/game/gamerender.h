@@ -34,7 +34,8 @@ public:
 	inline void setLevel( tLevel* pLevel ) { mpLevel = pLevel; }
 	inline void setCamera( CCamera const* pCamera ) { mpCamera = pCamera; }
 	inline void setSceneFileName( const char* szSceneFileName ) { mszSceneFileName = szSceneFileName; }
-	
+	inline void setVRView( bool bVRView ) { mbVRView = bVRView; }
+
 	void toggleShader( void );
 
 protected:
@@ -53,6 +54,7 @@ protected:
 	
 	tShaderProgram const*	mpCurrShaderProgram;
 
+
 protected:
 	void getVisibleModels( CCamera const* pCamera, 
 						   tVisibleOctNodes const* pVisibleNodes,
@@ -70,25 +72,43 @@ protected:
 	void initInstancing( void );
 
 	void drawInstances( CCamera const* pCamera, GLuint iFBO, GLuint iShader );
-	void drawLightModel( void );
-	void drawDeferredScene( void );
+	void drawLightModel( CCamera const* pCamera, int iEye );
+	void drawDeferredScene( int iEye );
+	void drawScene( void );
 
-	GLuint miDeferredFBO;
-	GLuint miPositionTexture;
-	GLuint miAlbedoTexture;
-	GLuint miDepthTexture;
-	GLuint miNormalTexture;
+	GLuint miLeftDeferredFBO;
+	GLuint miLeftPositionTexture;
+	GLuint miLeftAlbedoTexture;
+	GLuint miLeftDepthTexture;
+	GLuint miLeftNormalTexture;
 
-	GLuint miLightFBO; 
-	GLuint miLightTexture;
-	GLuint miLightDepthTexture;
-	GLuint miLightStencilBuffer;
+	GLuint miLeftLightFBO; 
+	GLuint miLeftLightTexture;
+	GLuint miLeftLightDepthTexture;
+	GLuint miLeftLightStencilBuffer;
 
-	GLuint miAmbientOcclusionFBO;
-	GLuint miAmbientOcclusionTexture;
+	GLuint miLeftAmbientOcclusionFBO;
+	GLuint miLeftAmbientOcclusionTexture;
 
-	GLuint miFinalFBO;
-	GLuint miFinalTexture;
+	GLuint miLeftFinalFBO;
+	GLuint miLeftFinalTexture;
+
+	GLuint miRightDeferredFBO;
+	GLuint miRightPositionTexture;
+	GLuint miRightAlbedoTexture;
+	GLuint miRightDepthTexture;
+	GLuint miRightNormalTexture;
+
+	GLuint miRightLightFBO; 
+	GLuint miRightLightTexture;
+	GLuint miRightLightDepthTexture;
+	GLuint miRightLightStencilBuffer;
+
+	GLuint miRightAmbientOcclusionFBO;
+	GLuint miRightAmbientOcclusionTexture;
+
+	GLuint miRightFinalFBO;
+	GLuint miRightFinalTexture;
 
 	GLuint miInstanceVBO;
 	GLuint miInstanceInfoVBO;
@@ -104,6 +124,7 @@ protected:
 	tLightInfo* maLightInfo;
 	int miNumLights;
 
+	bool	mbVRView;
 };
 
 #endif // __GAMERENDER_H__
