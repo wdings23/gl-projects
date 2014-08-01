@@ -87,6 +87,9 @@ protected:
 	GLuint miAmbientOcclusionFBO;
 	GLuint miAmbientOcclusionTexture;
 
+	GLuint miFinalFBO;
+	GLuint miFinalTexture;
+
 	GLuint miInstanceVBO;
 	GLuint miInstanceInfoVBO;
 

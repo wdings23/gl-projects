@@ -1,0 +1,46 @@
+precision lowp float;
+uniform sampler2D texture;
+
+uniform vec4 lensCenter;
+uniform vec2 screenScale;
+
+varying vec2 texCoord;
+varying vec4 varyingColor;
+
+const vec4 distortionConstants = vec4( 1.0, 0.22, 0.24, 0.0 );
+const vec4 chromaticAbberation = vec4( 0.995999, -0.004, 1.014, 0.0 );
+
+void main()
+{
+	vec2 center = vec2( 0.5, 0.5 );
+
+	vec2 theta = ( texCoord - center ) * screenScale;
+	float fDistanceSquared = theta.x * theta.x + theta.y * theta.y;
+	vec2 theta1 = theta * 
+				  ( distortionConstants.x + distortionConstants.y * fDistanceSquared +
+				    distortionConstants.z * fDistanceSquared * fDistanceSquared );
+					
+	vec2 uv = center + theta1 * screenScale;
+	if( uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0 )
+	{
+		gl_FragColor = vec4( 0.0, 0.0, 0.0, 1.0 );
+	}
+	else 
+	{
+		vec2 thetaBlue = theta1 * chromaticAbberation.z + chromaticAbberation.w * fDistanceSquared;
+		vec2 blueUV = center + thetaBlue * screenScale;
+		float fBlue = texture2D( texture, blueUV ).b;
+
+		vec2 greenUV = center + theta1 * screenScale;
+		float fGreen = texture2D( texture, blueUV ).g;
+
+		vec2 thetaRed = theta1 * chromaticAbberation.x + chromaticAbberation.y * fDistanceSquared;
+		vec2 redUV = center + thetaRed * screenScale;
+		float fRed = texture2D( texture, redUV ).r;
+
+		vec4 color = vec4( fRed, fGreen, fBlue, 1.0 );
+		gl_FragColor = color;
+	}
+
+	//gl_FragColor = vec4( theta.x, theta.y, 0.0, 1.0 );
+}

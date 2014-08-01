@@ -13,6 +13,8 @@
 #include "glee.h"
 #endif // _WIN32
 
+#define VR_DISTORTION 1
+
 struct LevelJobData
 {
     tLevel*         mpLevel;
@@ -874,6 +876,21 @@ void CGameRender::initInstancing( void )
 		glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, miAmbientOcclusionTexture, 0);
 
 		glDrawBuffers( 1, aBuffers );
+
+		// fbo for final
+		glGenFramebuffers( 1, &miFinalFBO );
+		glBindFramebuffer( GL_DRAW_FRAMEBUFFER, miFinalFBO );
+
+		glGenTextures( 1, &miFinalTexture );
+		glBindTexture( GL_TEXTURE_2D, miFinalTexture );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+		glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8, iFBWidth, iFBHeight, 0, GL_RGBA, GL_FLOAT, NULL );
+		glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, miFinalTexture, 0);
+
+		glDrawBuffers( 1, aBuffers );
 		
 		glBindFramebuffer( GL_DRAW_FRAMEBUFFER, 0 );
 		glBindRenderbuffer( GL_RENDERBUFFER, 0 );
@@ -1194,7 +1211,19 @@ void CGameRender::drawDeferredScene( void )
 		{ 0.0f, 1.0f },
 		{ 1.0f, 1.0f }
 	};
+
+	tVector4 aColors[] = 
+	{
+		{ 1.0f, 1.0f, 1.0f, 1.0f },
+		{ 1.0f, 1.0f, 1.0f, 1.0f },
+		{ 1.0f, 1.0f, 1.0f, 1.0f },
+		{ 1.0f, 1.0f, 1.0f, 1.0f },
+	};
     
+	float fScreenWidth = (float)renderGetScreenWidth() * renderGetScreenScale();
+	float fScreenHeight = (float)renderGetScreenHeight() * renderGetScreenScale();
+	float fAspectRatio = fScreenWidth / fScreenHeight;
+
 	// create ambient occlusion texture 
 	{
 		glBindFramebuffer( GL_DRAW_FRAMEBUFFER, miAmbientOcclusionFBO );
@@ -1250,6 +1279,12 @@ void CGameRender::drawDeferredScene( void )
 
 	// draw final scene
 	{
+#if defined( VR_DISTORTION )
+		glBindFramebuffer( GL_DRAW_FRAMEBUFFER, miFinalFBO );
+		glClearColor( 0.0f, 0.0f, 0.0f, 0.0f );
+		glClear( GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
+#endif // VR_DISTORTION
+
         glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
         
 		int iShader = CShaderManager::instance()->getShader( "deferred_shading" );
@@ -1298,5 +1333,56 @@ void CGameRender::drawDeferredScene( void )
 		glEnableVertexAttribArray( iUV );
     
 		glDrawArrays( GL_TRIANGLE_STRIP, 0, 4 );
+
+#if defined( VR_DISTORTION )
+		glBindFramebuffer( GL_DRAW_FRAMEBUFFER, 0 );
+#endif // VR_DISTORTION
+
 	}
+
+#if defined( VR_DISTORTION )
+	// draw with distortion
+	{
+		tVector2 lensCenter = 
+		{
+			fScreenWidth * 0.5f,
+			fScreenHeight * 0.5f,
+		};
+
+		int iShader = CShaderManager::instance()->getShader( "vr_distortion" );
+		WTFASSERT2( iShader > 0, "invalid shader" );
+
+		glUseProgram( iShader );
+
+		// uniforms
+		GLint iScreenCenter = glGetUniformLocation( iShader, "lensCenter" );
+		glUniform2f( iScreenCenter, lensCenter.fX, lensCenter.fY );
+
+		GLint iScreenScale = glGetUniformLocation( iShader, "screenScale" );
+		glUniform2f( iScreenScale, 1.0f, 1.0f );
+
+		// textures
+		GLuint iAlbedoTex = glGetUniformLocation( iShader, "texture" );
+		glActiveTexture( GL_TEXTURE0 );
+		glUniform1i( iAlbedoTex, 0 );
+		glBindTexture( GL_TEXTURE_2D, miFinalTexture );
+
+		// position and uv
+		int iPosition = glGetAttribLocation( iShader, "position" );
+		int iUV = glGetAttribLocation( iShader, "textureUV" );
+		int iColor = glGetAttribLocation( iShader, "color" );
+
+		// data
+		glVertexAttribPointer( iPosition, 4, GL_FLOAT, GL_FALSE, 0, aScreenVerts );
+		glEnableVertexAttribArray( iPosition );
+    
+		glVertexAttribPointer( iUV, 2, GL_FLOAT, GL_FALSE, 0, aTexCoords );
+		glEnableVertexAttribArray( iUV );
+
+		glVertexAttribPointer( iColor, 4, GL_FLOAT, GL_FALSE, 0, aColors );
+		glEnableVertexAttribArray( iColor );
+    
+		glDrawArrays( GL_TRIANGLE_STRIP, 0, 4 );
+	}
+#endif // VR_DISTORTION
 }

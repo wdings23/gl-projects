@@ -77,4 +77,10 @@
 		<fragment_shader>deferred_ao_fs.txt</fragment_shader>
 	</shader>
 	
+	<shader>
+		<name>vr_distortion</name>
+		<vertex_shader>noperspective_vs.txt</vertex_shader>
+		<fragment_shader>vr_distortion_fs.txt</fragment_shader>
+	</shader>
+
 </shaders>
