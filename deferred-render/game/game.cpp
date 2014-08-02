@@ -5,6 +5,259 @@
 /*
 **
 */
+static tVector4 evalSH( tVector4 const* pDirection )
+{
+	tVector2 SHCoeff = { 1.0f / ( 2.0f * sqrtf( PI ) ), sqrtf( 3.0f / PI ) * 0.5f };
+
+	tVector4 ret =
+	{
+		SHCoeff.fX * pDirection->fW,
+		-SHCoeff.fY * pDirection->fY,
+		SHCoeff.fY * pDirection->fZ,
+		-SHCoeff.fY * pDirection->fX
+	};
+
+	return ret;
+}
+
+/*
+**
+*/
+static tVector4 evalCosineLobe( tVector4 const* pDirection )
+{
+	tVector2 SHCosLobe = { sqrtf( PI ) * 0.5f, sqrtf( PI * 0.33333f ) };
+
+	tVector4 ret = 
+	{
+		SHCosLobe.fX * pDirection->fW, 
+		-SHCosLobe.fY * pDirection->fY,
+		SHCosLobe.fY * pDirection->fZ,
+		-SHCosLobe.fY * pDirection->fX,
+	};
+
+	return ret;
+}
+
+/*
+**
+*/
+static void testLPV( void )
+{
+	tVector4 aVolumeColors[] =
+	{
+		{ 1.0f, 0.0f, 0.0f, 1.0f },
+		{ 0.0f, 1.0f, 0.0f, 1.0f },
+		{ 0.0f, 0.0f, 1.0f, 1.0f },
+	};
+
+	// floor surrounded by two walls
+	tVector4 aVolumeNormals[] =
+	{
+		{ 1.0f, 0.0f, 0.0f, 1.0f },
+		{ 0.0f, 1.0f, 0.0f, 1.0f },
+		{ -1.0f, 0.0f, 0.0f, 1.0f },
+	};
+
+	for( int i = 0; i < 3; i++ )
+	{
+		Vector4Normalize( &aVolumeNormals[i], &aVolumeNormals[i] );
+	}
+
+	// color from RSM encoded in spherical harmonics
+	tVector3 aColorSH[3][3];
+
+	int iNumVolumes = sizeof( aVolumeColors ) / sizeof( *aVolumeColors );
+
+	// initial flux (RSM injection)
+	float fOneOverPI = 1.0f / PI;
+	for( int i = 0; i < iNumVolumes; i++ )
+	{
+		tVector4 const* pVolumeColor = &aVolumeColors[i];
+
+		tVector4 SHCoeff = evalCosineLobe( &aVolumeNormals[i] );
+		SHCoeff.fX *= fOneOverPI;
+		SHCoeff.fY *= fOneOverPI;
+		SHCoeff.fZ *= fOneOverPI;
+		SHCoeff.fW *= fOneOverPI;
+
+		printf( "SHCoeff %d = ( %f, %f, %f, %f )\n", 
+				i,
+				SHCoeff.fX,
+				SHCoeff.fY,
+				SHCoeff.fZ,
+				SHCoeff.fW );
+
+		tVector3* pColorSH0 = &aColorSH[i][0];
+		tVector3* pColorSH1 = &aColorSH[i][1];
+		tVector3* pColorSH2 = &aColorSH[i][2];
+
+		pColorSH0->fX = pVolumeColor->fX * SHCoeff.fX; 
+		pColorSH0->fY = pVolumeColor->fX * SHCoeff.fY; 
+		pColorSH0->fZ = pVolumeColor->fX * SHCoeff.fZ;
+		
+		pColorSH1->fX = pVolumeColor->fY * SHCoeff.fX; 
+		pColorSH1->fY = pVolumeColor->fY * SHCoeff.fY; 
+		pColorSH1->fZ = pVolumeColor->fY * SHCoeff.fZ;
+		
+		pColorSH2->fX = pVolumeColor->fZ * SHCoeff.fX; 
+		pColorSH2->fY = pVolumeColor->fZ * SHCoeff.fY; 
+		pColorSH2->fZ = pVolumeColor->fZ * SHCoeff.fZ;
+
+	}	// for i = 0 to num volumes
+
+	// contributes in spherical harmonics
+	tVector4 aSHContributions[3][3];
+	memset( aSHContributions, 0, sizeof( aSHContributions ) );
+	
+	// angle from center of current volume to the neighbor's volume
+	const float fDirectFaceSubtendedSolidAngle = 0.4006696846f / PI;
+	const float fSideFaceSubtendedSolidAngle = 0.4234413544f / PI;
+
+	// propagation
+	for( int i = 0; i < iNumVolumes; i++ )
+	{
+		for( int iNeighbor = i - 1; iNeighbor <= i + 1; iNeighbor++ )
+		{
+			if( iNeighbor < 0 || iNeighbor == i || iNeighbor >= iNumVolumes )
+			{
+				continue;
+			}
+
+			// direction
+			float fDirX = (float)( iNeighbor - i );
+			tVector4 directionToNeighbor = { fDirX, 0.0f, 0.0f, 1.0f };
+
+			// neighbor's color coefficient
+			tVector3 const* aNeighborColorSH = aColorSH[iNeighbor];
+
+			// neighbor direction in SH
+			tVector4 directionToNeighborSH = evalSH( &directionToNeighbor );
+			tVector4 directionToNeighborCosLobe = evalCosineLobe( &directionToNeighbor );
+
+			// color sh coefficient dot with direction 
+			float fDPRed = aNeighborColorSH[0].fX * directionToNeighborSH.fX + 
+						   aNeighborColorSH[0].fY * directionToNeighborSH.fY + 
+						   aNeighborColorSH[0].fZ * directionToNeighborSH.fZ;
+
+			float fDPGreen = aNeighborColorSH[1].fX * directionToNeighborSH.fX + 
+							 aNeighborColorSH[1].fY * directionToNeighborSH.fY + 
+							 aNeighborColorSH[1].fZ * directionToNeighborSH.fZ;
+
+			float fDPBlue = aNeighborColorSH[2].fX * directionToNeighborSH.fX + 
+						    aNeighborColorSH[2].fY * directionToNeighborSH.fY + 
+						    aNeighborColorSH[2].fZ * directionToNeighborSH.fZ;
+			
+			float fRedContribMult = fDirectFaceSubtendedSolidAngle * fDPRed;  
+			float fGreenContribMult = fDirectFaceSubtendedSolidAngle * fDPGreen;  
+			float fBlueContribMult = fDirectFaceSubtendedSolidAngle * fDPBlue;
+
+			// add up contributions
+			tVector4* pContrib = &aSHContributions[i][0];
+			pContrib->fX += directionToNeighborCosLobe.fX * fRedContribMult;
+			pContrib->fY += directionToNeighborCosLobe.fY * fRedContribMult;
+			pContrib->fZ += directionToNeighborCosLobe.fZ * fRedContribMult;
+			pContrib->fW += directionToNeighborCosLobe.fW * fRedContribMult;
+
+			pContrib = &aSHContributions[i][1];
+			pContrib->fX += directionToNeighborCosLobe.fX * fGreenContribMult;
+			pContrib->fY += directionToNeighborCosLobe.fY * fGreenContribMult;
+			pContrib->fZ += directionToNeighborCosLobe.fZ * fGreenContribMult;
+			pContrib->fW += directionToNeighborCosLobe.fW * fGreenContribMult;
+
+			pContrib = &aSHContributions[i][2];
+			pContrib->fX += directionToNeighborCosLobe.fX * fBlueContribMult;
+			pContrib->fY += directionToNeighborCosLobe.fY * fBlueContribMult;
+			pContrib->fZ += directionToNeighborCosLobe.fZ * fBlueContribMult;
+			pContrib->fW += directionToNeighborCosLobe.fW * fBlueContribMult;
+
+			tVector3 center = { 0.0f, 0.0f, 0.0f };
+			tVector3 aSides[] = 
+			{
+				{ -0.5f + fDirX, 0.0f, 0.0f },		// left
+				{ 0.5 + fDirX, 0.0f, 0.0f },		// right
+				{ fDirX, 0.0f, -0.5f },		// front
+				{ fDirX, 0.0f, 0.5f },		// back
+			};
+
+			tMatrix44 rotYNeg, rotYPlus;
+			Matrix44RotateY( &rotYNeg, -PI * 0.25f );
+			Matrix44RotateY( &rotYPlus, PI * 0.25f );
+
+			// sides of the neighbor's volume
+			for( int iSide = 0; iSide < 4; iSide++ )
+			{
+				tVector3 const* pSide = &aSides[iSide];
+				tVector4 dir = 
+				{
+					pSide->fX,
+					pSide->fY,
+					pSide->fZ,
+					1.0f
+				};
+
+				Vector4Normalize( &dir, &dir );
+
+				tVector4 side0 = { 0.0f, 0.0f, 0.0f, 1.0f }; 
+				tVector4 side1 = { 0.0f, 0.0f, 0.0f, 1.0f };
+
+				Matrix44Transform( &side0, &dir, &rotYNeg );
+				Matrix44Transform( &side1, &dir, &rotYPlus );
+
+				Vector4Normalize( &side0, &side0 );
+				Vector4Normalize( &side1, &side1 );
+
+				tVector4 directionToSideSH = evalSH( &dir );
+				tVector4 directionToSideCosLobe = evalCosineLobe( &dir );
+
+				// color sh coefficient dot with direction 
+				float fDPRed = aNeighborColorSH[0].fX * directionToSideSH.fX + 
+							   aNeighborColorSH[0].fY * directionToSideSH.fY + 
+							   aNeighborColorSH[0].fZ * directionToSideSH.fZ;
+
+				float fDPGreen = aNeighborColorSH[1].fX * directionToSideSH.fX + 
+								 aNeighborColorSH[1].fY * directionToSideSH.fY + 
+								 aNeighborColorSH[1].fZ * directionToSideSH.fZ;
+
+				float fDPBlue = aNeighborColorSH[2].fX * directionToSideSH.fX + 
+								aNeighborColorSH[2].fY * directionToSideSH.fY + 
+								aNeighborColorSH[2].fZ * directionToSideSH.fZ;
+			
+				float fRedContribMult = fDirectFaceSubtendedSolidAngle * fDPRed;  
+				float fGreenContribMult = fDirectFaceSubtendedSolidAngle * fDPGreen;  
+				float fBlueContribMult = fDirectFaceSubtendedSolidAngle * fDPBlue;
+
+				// add up contribution
+				// red
+				tVector4* pContrib = &aSHContributions[i][0];
+				pContrib->fX += directionToSideCosLobe.fX * fRedContribMult;
+				pContrib->fY += directionToSideCosLobe.fY * fRedContribMult;
+				pContrib->fZ += directionToSideCosLobe.fZ * fRedContribMult;
+				pContrib->fW += directionToSideCosLobe.fW * fRedContribMult;
+
+				// green
+				pContrib = &aSHContributions[i][1];
+				pContrib->fX += directionToSideCosLobe.fX * fRedContribMult;
+				pContrib->fY += directionToSideCosLobe.fY * fRedContribMult;
+				pContrib->fZ += directionToSideCosLobe.fZ * fRedContribMult;
+				pContrib->fW += directionToSideCosLobe.fW * fRedContribMult;
+
+				// blue
+				pContrib = &aSHContributions[i][2];
+				pContrib->fX += directionToSideCosLobe.fX * fRedContribMult;
+				pContrib->fY += directionToSideCosLobe.fY * fRedContribMult;
+				pContrib->fZ += directionToSideCosLobe.fZ * fRedContribMult;
+				pContrib->fW += directionToSideCosLobe.fW * fRedContribMult;
+				
+			}	// for side = 0 to 4
+
+		}	// for neighbor = 0 to num volumes
+
+	}	// for i = 0 to num volumes
+}
+
+/*
+**
+*/
 CGame* CGame::mpInstance = NULL;
 CGame* CGame::instance( void )
 {
@@ -37,6 +290,8 @@ CGame::~CGame( void )
 */
 void CGame::init( void )
 {
+//testLPV();
+
 	levelInit( &mLevel );
 
 	miScreenWidth = renderGetScreenWidth();
