@@ -236,17 +236,17 @@ static void testLPV( void )
 
 				// green
 				pContrib = &aSHContributions[i][1];
-				pContrib->fX += directionToSideCosLobe.fX * fRedContribMult;
-				pContrib->fY += directionToSideCosLobe.fY * fRedContribMult;
-				pContrib->fZ += directionToSideCosLobe.fZ * fRedContribMult;
-				pContrib->fW += directionToSideCosLobe.fW * fRedContribMult;
+				pContrib->fX += directionToSideCosLobe.fX * fGreenContribMult;
+				pContrib->fY += directionToSideCosLobe.fY * fGreenContribMult;
+				pContrib->fZ += directionToSideCosLobe.fZ * fGreenContribMult;
+				pContrib->fW += directionToSideCosLobe.fW * fGreenContribMult;
 
 				// blue
 				pContrib = &aSHContributions[i][2];
-				pContrib->fX += directionToSideCosLobe.fX * fRedContribMult;
-				pContrib->fY += directionToSideCosLobe.fY * fRedContribMult;
-				pContrib->fZ += directionToSideCosLobe.fZ * fRedContribMult;
-				pContrib->fW += directionToSideCosLobe.fW * fRedContribMult;
+				pContrib->fX += directionToSideCosLobe.fX * fBlueContribMult;
+				pContrib->fY += directionToSideCosLobe.fY * fBlueContribMult;
+				pContrib->fZ += directionToSideCosLobe.fZ * fBlueContribMult;
+				pContrib->fW += directionToSideCosLobe.fW * fBlueContribMult;
 				
 			}	// for side = 0 to 4
 
