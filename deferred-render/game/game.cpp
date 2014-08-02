@@ -7,7 +7,7 @@
 */
 static tVector4 evalSH( tVector4 const* pDirection )
 {
-	tVector2 SHCoeff = { 1.0f / ( 2.0f * sqrtf( PI ) ), sqrtf( 3.0f / PI ) * 0.5f };
+	tVector2 SHCoeff = { 1.0f / ( 2.0f * sqrtf( PI ) ), sqrtf( 3.0f ) / ( 2.0f * sqrtf( PI ) ) };
 
 	tVector4 ret =
 	{
@@ -53,9 +53,9 @@ static void testLPV( void )
 	// floor surrounded by two walls
 	tVector4 aVolumeNormals[] =
 	{
-		{ 1.0f, 0.0f, 0.0f, 1.0f },
+		{ 1.0f, -1.0f, 0.0f, 1.0f },
 		{ 0.0f, 1.0f, 0.0f, 1.0f },
-		{ -1.0f, 0.0f, 0.0f, 1.0f },
+		{ -1.0f, -1.0f, 0.0f, 1.0f },
 	};
 
 	for( int i = 0; i < 3; i++ )
@@ -68,7 +68,7 @@ static void testLPV( void )
 
 	int iNumVolumes = sizeof( aVolumeColors ) / sizeof( *aVolumeColors );
 
-	// initial flux (RSM injection)
+	// initial flux (Reflection Shadow Map injection)
 	float fOneOverPI = 1.0f / PI;
 	for( int i = 0; i < iNumVolumes; i++ )
 	{
@@ -253,6 +253,56 @@ static void testLPV( void )
 		}	// for neighbor = 0 to num volumes
 
 	}	// for i = 0 to num volumes
+
+	tVector3 aColors[] = 
+	{
+		{ 0.0f, 0.0f, 0.0f },
+		{ 0.0f, 0.0f, 0.0f },
+		{ 0.0f, 0.0f, 0.0f },
+	};
+	
+	// color = ( SH( -normal ) . contribution )
+	for( int i = 0; i < 3; i++ )
+	{
+		tVector4 negNormal = 
+		{
+			aVolumeNormals[i].fX,
+			aVolumeNormals[i].fY,
+			aVolumeNormals[i].fZ,
+			1.0f,
+		};
+
+		tVector4 normalSH = evalSH( &negNormal );
+
+		aColors[i].fX = aSHContributions[i][0].fX * negNormal.fX + aSHContributions[i][0].fY * negNormal.fY + aSHContributions[i][0].fZ * negNormal.fZ + aSHContributions[i][0].fW;
+		aColors[i].fY = aSHContributions[i][1].fX * negNormal.fX + aSHContributions[i][1].fY * negNormal.fY + aSHContributions[i][1].fZ * negNormal.fZ + aSHContributions[i][1].fW;
+		aColors[i].fZ = aSHContributions[i][2].fX * negNormal.fX + aSHContributions[i][2].fY * negNormal.fY + aSHContributions[i][2].fZ * negNormal.fZ + aSHContributions[i][2].fW;
+
+	}
+
+	for( int i = 0; i < 3; i++ )
+	{
+		for( int j = 0; j < 3; j++ )
+		{
+			printf( "SH %d %d ( %f, %f, %f, %f )\n",
+					i,
+					j,
+					aSHContributions[i][j].fX,
+					aSHContributions[i][j].fY,
+					aSHContributions[i][j].fZ );
+		}
+
+		printf( "\n" );
+	}
+
+	for( int i = 0; i < 3; i++ )
+	{
+		printf( "color %d ( %f, %f, %f )\n",
+				i,
+				aColors[i].fX,
+				aColors[i].fY,
+				aColors[i].fZ );
+	}
 }
 
 /*
@@ -290,7 +340,7 @@ CGame::~CGame( void )
 */
 void CGame::init( void )
 {
-//testLPV();
+testLPV();
 
 	levelInit( &mLevel );
 
