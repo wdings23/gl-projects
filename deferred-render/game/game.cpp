@@ -274,9 +274,9 @@ static void testLPV( void )
 
 		tVector4 normalSH = evalSH( &negNormal );
 
-		aColors[i].fX = aSHContributions[i][0].fX * negNormal.fX + aSHContributions[i][0].fY * negNormal.fY + aSHContributions[i][0].fZ * negNormal.fZ + aSHContributions[i][0].fW;
-		aColors[i].fY = aSHContributions[i][1].fX * negNormal.fX + aSHContributions[i][1].fY * negNormal.fY + aSHContributions[i][1].fZ * negNormal.fZ + aSHContributions[i][1].fW;
-		aColors[i].fZ = aSHContributions[i][2].fX * negNormal.fX + aSHContributions[i][2].fY * negNormal.fY + aSHContributions[i][2].fZ * negNormal.fZ + aSHContributions[i][2].fW;
+		aColors[i].fX = aSHContributions[i][0].fX * normalSH.fX + aSHContributions[i][0].fY * normalSH.fY + aSHContributions[i][0].fZ * normalSH.fZ + aSHContributions[i][0].fW * normalSH.fW;
+		aColors[i].fY = aSHContributions[i][1].fX * normalSH.fX + aSHContributions[i][1].fY * normalSH.fY + aSHContributions[i][1].fZ * normalSH.fZ + aSHContributions[i][1].fW * normalSH.fW;
+		aColors[i].fZ = aSHContributions[i][2].fX * normalSH.fX + aSHContributions[i][2].fY * normalSH.fY + aSHContributions[i][2].fZ * normalSH.fZ + aSHContributions[i][2].fW * normalSH.fW;
 
 	}
 
