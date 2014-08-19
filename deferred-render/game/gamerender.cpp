@@ -873,7 +873,7 @@ void CGameRender::initInstancing( void )
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
 		glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA32F, iFBWidth, iFBHeight, 0, GL_RGBA, GL_FLOAT, NULL );
-		glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, miLeftNormalTexture, 0);
+		glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, miLeftNormalTexture, 0 );
 
 		// depth
 		glGenTextures( 1, &miLeftDepthTexture );
@@ -883,9 +883,16 @@ void CGameRender::initInstancing( void )
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
 		glTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, iFBWidth, iFBHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL );
-		glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, miLeftDepthTexture, 0);
+		glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, miLeftDepthTexture, 0 );
 		
-		GLenum aBuffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
+		// render buffers for depth and stencil
+		glGenRenderbuffers( 1, &miLeftStencilBuffer );
+		glBindRenderbuffer( GL_RENDERBUFFER, miLeftStencilBuffer );
+		glRenderbufferStorage( GL_RENDERBUFFER, GL_DEPTH32F_STENCIL8, iFBWidth, iFBHeight );
+		glFramebufferRenderbuffer( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, miLeftStencilBuffer );
+		glFramebufferRenderbuffer( GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, miLeftStencilBuffer );
+
+		GLenum aBuffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_DEPTH_ATTACHMENT };
 		glDrawBuffers( 3, aBuffers );
 		
 		// fbo for spot lights
@@ -899,7 +906,7 @@ void CGameRender::initInstancing( void )
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
 		glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA32F, iFBWidth, iFBHeight, 0, GL_RGBA, GL_FLOAT, NULL );
-		glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, miLeftLightTexture, 0);
+		glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, miLeftLightTexture, 0 );
 		
 		glGenTextures( 1, &miLeftLightDepthTexture );
 		glBindTexture( GL_TEXTURE_2D, miLeftLightDepthTexture );
@@ -907,12 +914,12 @@ void CGameRender::initInstancing( void )
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-		glTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, iFBWidth, iFBHeight, 0, GL_RGBA, GL_FLOAT, NULL );
-		glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, miLeftLightDepthTexture, 0);
+		glTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, iFBWidth, iFBHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL );
+		glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, miLeftLightDepthTexture, 0 );
 
 		glGenRenderbuffers( 1, &miLeftLightStencilBuffer );
 		glBindRenderbuffer( GL_RENDERBUFFER, miLeftLightStencilBuffer );
-		glRenderbufferStorage( GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, iFBWidth, iFBHeight );
+		glRenderbufferStorage( GL_RENDERBUFFER, GL_DEPTH32F_STENCIL8, iFBWidth, iFBHeight );
 		glFramebufferRenderbuffer( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, miLeftLightStencilBuffer );
 		glFramebufferRenderbuffer( GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, miLeftLightStencilBuffer );
 		
@@ -1003,6 +1010,13 @@ void CGameRender::initInstancing( void )
 		glTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, iFBWidth, iFBHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL );
 		glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, miRightDepthTexture, 0);
 		
+		// render buffers for depth and stencil
+		glGenRenderbuffers( 1, &miRightStencilBuffer );
+		glBindRenderbuffer( GL_RENDERBUFFER, miRightStencilBuffer );
+		glRenderbufferStorage( GL_RENDERBUFFER, GL_DEPTH32F_STENCIL8, iFBWidth, iFBHeight );
+		glFramebufferRenderbuffer( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, miRightStencilBuffer );
+		glFramebufferRenderbuffer( GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, miRightStencilBuffer );
+
 		GLenum aBuffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
 		glDrawBuffers( 3, aBuffers );
 		
@@ -1030,7 +1044,7 @@ void CGameRender::initInstancing( void )
 
 		glGenRenderbuffers( 1, &miRightLightStencilBuffer );
 		glBindRenderbuffer( GL_RENDERBUFFER, miRightLightStencilBuffer );
-		glRenderbufferStorage( GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, iFBWidth, iFBHeight );
+		glRenderbufferStorage( GL_RENDERBUFFER, GL_DEPTH32F_STENCIL8, iFBWidth, iFBHeight );
 		glFramebufferRenderbuffer( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, miRightLightStencilBuffer );
 		glFramebufferRenderbuffer( GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, miRightLightStencilBuffer );
 		
@@ -1193,23 +1207,45 @@ void CGameRender::drawLightModel( CCamera const* pCamera, int iEye )
 	GLuint iLightShader = CShaderManager::instance()->getShader( "light_model" );
 	WTFASSERT2( iLightShader > 0, "invalid shader" );
 
+	// which side for fbo
 	GLuint iFBO = miLeftLightFBO;
+	GLuint iReadFBO = miLeftDeferredFBO;
 	if( iEye == EYE_RIGHT )
 	{
 		iFBO = miRightLightFBO;
+		iReadFBO = miRightDeferredFBO;
 	}
+
+	int iScreenWidth = (int)( (float)renderGetScreenWidth() * renderGetScreenScale() ) / 2;
+	int iScreenHeight = (int)( (float)renderGetScreenHeight() * renderGetScreenScale() ) / 2;
 
 	//GLuint iFBO = 0;
 	
 	glCullFace( GL_BACK );
 
+	// bind read and write frame buffer
+	GLenum error = glGetError();
 	glBindFramebuffer( GL_DRAW_FRAMEBUFFER, iFBO );
-	glClearColor( 0.0f, 0.0f, 0.0f, 0.0f );
-	glClear( GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
+	glBindFramebuffer( GL_READ_FRAMEBUFFER, iReadFBO );
 
-	// draw scene for depth values
-	glColorMask( GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE );	// don't write to color
-	drawInstances( pCamera, iFBO, iInstanceShader );
+	// blit depth values from already rendered scene to the light's fbo
+	error = glGetError();
+	glBlitFramebuffer( 0, 
+					   0, 
+					   iScreenWidth, 
+					   iScreenHeight, 
+					   0, 
+					   0, 
+					   iScreenWidth, 
+					   iScreenHeight, 
+					   GL_DEPTH_BUFFER_BIT, 
+					   GL_NEAREST );
+
+	GLenum error2 = glGetError();
+	WTFASSERT2( error2 == GL_NONE, "error blitting framebuffer" );
+
+	glClearColor( 0.0f, 0.0f, 0.0f, 0.0f );
+	glClear( GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
 
 	for( int i = 0; i < miNumLights; i++ ) 
 	{
@@ -1377,6 +1413,7 @@ void CGameRender::drawLightModel( CCamera const* pCamera, int iEye )
 	glBindBuffer( GL_ARRAY_BUFFER, 0 );
 	glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );
 	glBindFramebuffer( GL_DRAW_FRAMEBUFFER, 0 );
+	glBindFramebuffer( GL_READ_FRAMEBUFFER, 0 );
 
 }
 

@@ -81,6 +81,7 @@ protected:
 	GLuint miLeftAlbedoTexture;
 	GLuint miLeftDepthTexture;
 	GLuint miLeftNormalTexture;
+	GLuint miLeftStencilBuffer;
 
 	GLuint miLeftLightFBO; 
 	GLuint miLeftLightTexture;
@@ -98,6 +99,7 @@ protected:
 	GLuint miRightAlbedoTexture;
 	GLuint miRightDepthTexture;
 	GLuint miRightNormalTexture;
+	GLuint miRightStencilBuffer;
 
 	GLuint miRightLightFBO; 
 	GLuint miRightLightTexture;
