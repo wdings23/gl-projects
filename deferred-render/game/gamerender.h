@@ -75,6 +75,10 @@ protected:
 	void drawLightModel( CCamera const* pCamera, int iEye );
 	void drawDeferredScene( int iEye );
 	void drawScene( void );
+	void initFBO( void );
+
+	void setupShadowCamera( void );
+	void drawShadowCamera( void );
 
 	GLuint miLeftDeferredFBO;
 	GLuint miLeftPositionTexture;
@@ -127,6 +131,15 @@ protected:
 	int miNumLights;
 
 	bool	mbVRView;
+
+	GLuint		miShadowViewFBO;
+	GLuint		miShadowViewDepthTexture;
+	GLuint		miShadowViewDepthBuffer;
+
+	GLuint		miShadowFBO;
+	GLuint		miShadowTexture;
+
+	CCamera		mShadowCamera;
 };
 
 #endif // __GAMERENDER_H__

@@ -347,8 +347,8 @@ testLPV();
 	miScreenWidth = renderGetScreenWidth();
 	miScreenHeight = renderGetScreenHeight();
 
-	tVector4 pos = { 0.0f, 0.0f, -12.0f, 1.0f };
-	tVector4 lookAt = { 0.0f, 0.0f, 100.0f, 1.0f };
+	tVector4 pos = { 0.0f, 5.0f, -22.0f, 1.0f };
+	tVector4 lookAt = { 0.0f, 0.0f, 0.0f, 1.0f };
 	tVector4 up = { 0.0f, 1.0f, 0.0f, 1.0f };
 
 	mCamera.setPosition( &pos );

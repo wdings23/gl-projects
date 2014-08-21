@@ -83,4 +83,16 @@
 		<fragment_shader>vr_distortion_fs.txt</fragment_shader>
 	</shader>
 
+	<shader>
+		<name>shadow_view</name>
+		<vertex_shader>shadow_view_vs.txt</vertex_shader>
+		<fragment_shader>shadow_view_fs.txt</fragment_shader>
+	</shader>
+
+	<shader>
+		<name>shadow</name>
+		<vertex_shader>deferred_vs.txt</vertex_shader>
+		<fragment_shader>deferred_shadow_fs.txt</fragment_shader>
+	</shader>
+
 </shaders>

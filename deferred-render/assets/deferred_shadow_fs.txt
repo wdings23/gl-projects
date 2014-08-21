@@ -1,0 +1,51 @@
+uniform sampler2D posTexture;
+uniform sampler2D shadowDepthTexture;
+
+uniform mat4 shadowViewProjMatrix;
+uniform mat4 inverseViewMatrix;
+
+float gfOffset = 0.0005;
+
+varying vec2 vTexCoord;
+
+void main( void )
+{
+	// xform view position to light's view-projection position
+	vec4 viewPos = texture2D( posTexture, vTexCoord );
+	vec4 shadowViewPos = shadowViewProjMatrix * inverseViewMatrix * viewPos;
+	
+	// texture coordinate of the shadow map
+	vec2 shadowTexCoord;
+	shadowTexCoord.xy = shadowViewPos.xy / shadowViewPos.w;
+	shadowTexCoord.xy = shadowTexCoord.xy * 0.5 + 0.5;	// ( -1, 1 ) to ( 0, 1 )
+	//shadowTexCoord.y = 1.0 - shadowTexCoord.y;
+
+	// depth from light's pov in the shadow map
+	vec4 depthFromLight = texture2D( shadowDepthTexture, shadowTexCoord );
+	float fDepthFromLight = depthFromLight.z;
+	
+	// depth of current fragment in light's pov
+	float fCurrDepth = shadowViewPos.z / shadowViewPos.w;
+
+	// check if it's blocked
+	vec4 color = vec4( 1.0, 1.0, 1.0, 1.0 );
+	if( shadowTexCoord.x < 0.0 || shadowTexCoord.x > 1.0 ||
+		shadowTexCoord.y < 0.0 || shadowTexCoord.y > 1.0 )
+	{
+		color.xyz = vec3( 1.0, 0.0, 0.0 );
+	}
+	else
+	{
+		if( fCurrDepth - gfOffset > fDepthFromLight )
+		{
+			color.xyz = vec3( 0.5, 0.5, 0.5 );
+		}
+	}
+
+	gl_FragColor = color;
+	
+	/*gl_FragColor = vec4( shadowViewPos.x / shadowViewPos.w,
+						 shadowViewPos.y / shadowViewPos.w,
+						 shadowViewPos.z / shadowViewPos.w,
+						 1.0 );*/
+}

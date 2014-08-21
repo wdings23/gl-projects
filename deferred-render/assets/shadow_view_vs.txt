@@ -1,0 +1,21 @@
+attribute vec4 position;
+attribute vec4 normal;
+attribute vec4 color;
+attribute vec4 scaling;
+attribute vec4 translation;
+
+uniform mat4 view_matrix;
+uniform mat4 projection_matrix;
+uniform mat4 cam_rotation_matrix;
+
+varying vec4 vPosition;
+
+void main( void )
+{
+	vec4 instancePos;
+	instancePos.xyz = position.xyz * scaling.xyz + translation.xyz;
+	instancePos.w = 1.0;
+
+	vPosition = projection_matrix * view_matrix * instancePos;	
+	gl_Position = vPosition;
+}

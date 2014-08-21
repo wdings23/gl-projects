@@ -1,0 +1,10 @@
+varying vec4 vPosition;
+
+void main( void )
+{
+	float fOneOverW = 1.0 / vPosition.w;
+	gl_FragColor = vec4( vPosition.x * fOneOverW, 
+						 vPosition.y * fOneOverW,
+						 vPosition.z * fOneOverW,
+						 1.0 );
+}
