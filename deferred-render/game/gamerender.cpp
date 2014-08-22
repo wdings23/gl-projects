@@ -90,6 +90,18 @@ void CGameRender::init( void )
 	mpCurrShaderProgram = CShaderManager::instance()->getShaderProgram( miShaderIndex );
 	CHUD::instance()->setShaderName( mpCurrShaderProgram->mszName );
 
+	maShadowSplitInfo[0].mfCameraDistanceFromCenter = 6.0f;
+	maShadowSplitInfo[0].mfStartSplitZ = 0.0f;
+	maShadowSplitInfo[0].mfCenterDistanceFromStart = 2.0f;
+
+	maShadowSplitInfo[1].mfCameraDistanceFromCenter = 12.0f;
+	maShadowSplitInfo[1].mfStartSplitZ = 4.0f;
+	maShadowSplitInfo[1].mfCenterDistanceFromStart = 8.0f;
+
+	maShadowSplitInfo[2].mfCameraDistanceFromCenter = 15.0f;
+	maShadowSplitInfo[2].mfStartSplitZ = 18.0f;
+	maShadowSplitInfo[2].mfCenterDistanceFromStart = 14.0f;
+
 	initInstancing();
 	initFBO();
 	setupShadowCamera();
@@ -100,7 +112,10 @@ void CGameRender::init( void )
 */
 void CGameRender::draw( float fDT )
 {
-	drawShadowCamera();
+	for( int i = 0; i < MAX_SHADOW_SPLITS; i++ )
+	{
+		drawShadowCamera( i );
+	}
 
 	float fEyeDistance = 0.0f;
 	if( mbVRView )
@@ -1308,28 +1323,61 @@ void CGameRender::drawDeferredScene( int iEye )
 		glUniform1i( iPosTex, 0 );
 		glBindTexture( GL_TEXTURE_2D, iPositionTexture );
 
-		// depth 
-		GLuint iShadowViewDepthTex = glGetUniformLocation( iShader, "shadowDepthTexture" );
-		glActiveTexture( GL_TEXTURE1 );
-		glUniform1i( iShadowViewDepthTex, 1 );
-		glBindTexture( GL_TEXTURE_2D, miShadowViewDepthTexture );
+		// depths
+		float afViewProjMatrices[MAX_SHADOW_SPLITS*16];
+		for( int i = 0; i < MAX_SHADOW_SPLITS; i++ )
+		{
+			char szDepthTextureUniform[64];
+			snprintf( szDepthTextureUniform, sizeof( szDepthTextureUniform ), "shadowDepthTexture%d", i );
 
-		// matrices
-		tMatrix44 const* pShadowViewMatrix = mShadowCamera.getViewMatrix();
-		tMatrix44 const* pProjMatrix = mShadowCamera.getProjectionMatrix();
-		tMatrix44 const* pViewMatrix = mpCamera->getViewMatrix();
+			GLuint iShadowViewDepthTex = glGetUniformLocation( iShader, szDepthTextureUniform );
+			glActiveTexture( GL_TEXTURE1 + i );
+			glUniform1i( iShadowViewDepthTex, i + 1 );
+			glBindTexture( GL_TEXTURE_2D, maiShadowViewDepthTextures[i] );
 
-		tMatrix44 shadowViewProjMatrix, inverseViewMatrix;
-		Matrix44Multiply( &shadowViewProjMatrix, pProjMatrix, pShadowViewMatrix );
-		Matrix44Inverse( &inverseViewMatrix, pViewMatrix );
+			// matrices
+			tMatrix44 const* pShadowViewMatrix = maShadowCameras[i].getViewMatrix();
+			//tMatrix44 const* pProjMatrix = maShadowCameras[i].getProjectionMatrix();
+			
+			// orthographic projection to fit in the view
+			tMatrix44 orthoMatrix;
+			float fViewSize = maShadowSplitInfo[i].mfCameraDistanceFromCenter * 0.5f;
+			Matrix44Orthographic( &orthoMatrix,
+								  -fViewSize,
+								  fViewSize,
+								  -fViewSize,
+								  fViewSize,
+								  1.0f,
+								  100.0f );
+
+			tMatrix44 shadowViewProjMatrix;
+			Matrix44Multiply( &shadowViewProjMatrix, &orthoMatrix, pShadowViewMatrix );
+			
+			tMatrix44 transposeShadowViewProjMatrix;
+			Matrix44Transpose( &transposeShadowViewProjMatrix, &shadowViewProjMatrix );
+			
+			memcpy( &afViewProjMatrices[i*16], transposeShadowViewProjMatrix.afEntries, sizeof( float ) * 16 );
 		
-		tMatrix44 transposeShadowViewProjMatrix, transposeInverseViewMatrix;
-		Matrix44Transpose( &transposeShadowViewProjMatrix, &shadowViewProjMatrix );
+		}	// for i = 0 to max shadow splits
+
+		tMatrix44 inverseViewMatrix, transposeInverseViewMatrix;
+		tMatrix44 const* pViewMatrix = mpCamera->getViewMatrix();
+		Matrix44Inverse( &inverseViewMatrix, pViewMatrix );
 		Matrix44Transpose( &transposeInverseViewMatrix, &inverseViewMatrix );
 
+		// split uniform
+		float afSplitZ[MAX_SHADOW_SPLITS];
+		for( int i = 0; i < MAX_SHADOW_SPLITS; i++ )
+		{
+			afSplitZ[i] = maShadowSplitInfo[i].mfStartSplitZ;
+		}
+
+		GLuint iSplitUniform = glGetUniformLocation( iShader, "afSplitZ" );
+		glUniform1fv( iSplitUniform, MAX_SHADOW_SPLITS, afSplitZ );
+
 		// matrix uniform
-		GLint iShadowViewProjMatrix = glGetUniformLocation( iShader, "shadowViewProjMatrix" );
-		glUniformMatrix4fv( iShadowViewProjMatrix, 1, GL_FALSE, transposeShadowViewProjMatrix.afEntries );
+		GLint iShadowViewProjMatrix = glGetUniformLocation( iShader, "aShadowViewProjMatrix" );
+		glUniformMatrix4fv( iShadowViewProjMatrix, MAX_SHADOW_SPLITS, GL_FALSE, afViewProjMatrices );
 
 		GLint iInverseViewProjMatrix = glGetUniformLocation( iShader, "inverseViewMatrix" );
 		glUniformMatrix4fv( iInverseViewProjMatrix, 1, GL_FALSE, transposeInverseViewMatrix.afEntries );
@@ -1337,7 +1385,7 @@ void CGameRender::drawDeferredScene( int iEye )
 		int iPosition = glGetAttribLocation( iShader, "position" );
 		int iUV = glGetAttribLocation( iShader, "uv" );
 
-        glVertexAttribPointer( iUV, 2, GL_FLOAT, GL_FALSE, 0, aTexCoords );
+		glVertexAttribPointer( iUV, 2, GL_FLOAT, GL_FALSE, 0, aTexCoords );
 		glEnableVertexAttribArray( iUV );
         
 		glVertexAttribPointer( iPosition, 4, GL_FLOAT, GL_FALSE, 0, aScreenVerts );
@@ -1345,11 +1393,10 @@ void CGameRender::drawDeferredScene( int iEye )
     
 		glDrawArrays( GL_TRIANGLE_STRIP, 0, 4 );
         
-        glDisableVertexAttribArray( iUV );
-        glDisableVertexAttribArray( iPosition );
+		glDisableVertexAttribArray( iUV );
+		glDisableVertexAttribArray( iPosition );
         
 		glBindFramebuffer( GL_DRAW_FRAMEBUFFER, 0 );
-
 	}
 
 	// draw final scene
@@ -1795,74 +1842,103 @@ void CGameRender::setupShadowCamera( void )
 	int iFBHeight = (int)( (float)renderGetScreenHeight() * renderGetScreenScale() ) / 2;
 
 	// fbo for view from light
-	glGenFramebuffers( 1, &miShadowViewFBO );
-	glBindFramebuffer( GL_DRAW_FRAMEBUFFER, miShadowViewFBO );
+	for( int i = 0; i < MAX_SHADOW_SPLITS; i++ )
+	{
+		glGenFramebuffers( 1, &maiShadowViewFBOs[i] );
+		glBindFramebuffer( GL_DRAW_FRAMEBUFFER, maiShadowViewFBOs[i] );
 
-	glGenTextures( 1, &miShadowViewDepthTexture );
-	glBindTexture( GL_TEXTURE_2D, miShadowViewDepthTexture );
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA32F, iFBWidth, iFBHeight, 0, GL_RGBA, GL_FLOAT, NULL );
-	glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, miShadowViewDepthTexture, 0);
+		glGenTextures( 1, &maiShadowViewDepthTextures[i] );
+		glBindTexture( GL_TEXTURE_2D, maiShadowViewDepthTextures[i] );
+		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+		glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA32F, iFBWidth, iFBHeight, 0, GL_RGBA, GL_FLOAT, NULL );
+		glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, maiShadowViewDepthTextures[i], 0);
 
-	// render buffers for depth and stencil
-	glGenRenderbuffers( 1, &miShadowViewDepthBuffer );
-	glBindRenderbuffer( GL_RENDERBUFFER, miShadowViewDepthBuffer );
-	glRenderbufferStorage( GL_RENDERBUFFER, GL_DEPTH32F_STENCIL8, iFBWidth, iFBHeight );
-	glFramebufferRenderbuffer( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, miShadowViewDepthBuffer );
-	glFramebufferRenderbuffer( GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, miShadowViewDepthBuffer );
+		// render buffers for depth and stencil
+		glGenRenderbuffers( 1, &maiShadowViewDepthBuffers[i] );
+		glBindRenderbuffer( GL_RENDERBUFFER, maiShadowViewDepthBuffers[i] );
+		glRenderbufferStorage( GL_RENDERBUFFER, GL_DEPTH32F_STENCIL8, iFBWidth, iFBHeight );
+		glFramebufferRenderbuffer( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, maiShadowViewDepthBuffers[i] );
+		glFramebufferRenderbuffer( GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, maiShadowViewDepthBuffers[i] );
 
-	// shadow
+	}	// for i = 0 to max shadow splots
+
+	// total shadow fbo
 	glGenFramebuffers( 1, &miShadowFBO );
 	glBindFramebuffer( GL_DRAW_FRAMEBUFFER, miShadowFBO );
 
 	glGenTextures( 1, &miShadowTexture );
 	glBindTexture( GL_TEXTURE_2D, miShadowTexture );
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
 	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA32F, iFBWidth, iFBHeight, 0, GL_RGBA, GL_FLOAT, NULL );
-	glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, miShadowTexture, 0);
+	glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, miShadowTexture, 0 );
 }
 
 /*
 **
 */
-void CGameRender::drawShadowCamera( void )
+void CGameRender::drawShadowCamera( int iFBOIndex )
 {
 	tVector4 const* pCamPos = mpCamera->getPosition();
 	tVector4 const* pCamLook = mpCamera->getLookAt();
 
+	tVector4 lightDir = { -1.0f, 1.0f, 0.0f, 1.0f };
+	Vector4Normalize( &lightDir, &lightDir );
+
 	tVector4 newPos, newLookAt;
 
 	memcpy( &newPos, pCamPos, sizeof( tVector4 ) );
-	memcpy( &newLookAt, pCamLook, sizeof( tVector4 ) );
+	memcpy( &newLookAt, pCamPos, sizeof( tVector4 ) );
 
-	newPos.fX += 10.0f;
-	newPos.fY += 0.0f;
-	newPos.fZ -= 5.0f;
+	tVector4 camDir = { 0.0f, 0.0f, 0.0f, 1.0f };
+	Vector4Subtract( &camDir, pCamLook, pCamPos );
+	Vector4Normalize( &camDir, &camDir );
 
-	mShadowCamera.setPosition( &newPos );
-	mShadowCamera.setLookAt( &newLookAt );
+	float fLightDistance = maShadowSplitInfo[iFBOIndex].mfCameraDistanceFromCenter;
+	float fCenterDistance = maShadowSplitInfo[iFBOIndex].mfCenterDistanceFromStart;
+
+	newPos.fX = pCamPos->fX + camDir.fX * fCenterDistance + lightDir.fX * fLightDistance;
+	newPos.fY = pCamPos->fY + camDir.fY * fCenterDistance + lightDir.fY * fLightDistance;
+	newPos.fZ = pCamPos->fZ + camDir.fZ * fCenterDistance + lightDir.fZ * fLightDistance;
+
+	newLookAt.fX = pCamPos->fX + camDir.fX * fCenterDistance;
+	newLookAt.fY = pCamPos->fY + camDir.fY * fCenterDistance;
+	newLookAt.fZ = pCamPos->fZ + camDir.fZ * fCenterDistance;
+
+	maShadowCameras[iFBOIndex].setPosition( &newPos );
+	maShadowCameras[iFBOIndex].setLookAt( &newLookAt );
 
 	int iFBWidth = (int)( (float)renderGetScreenWidth() * renderGetScreenScale() ) / 2;
 	int iFBHeight = (int)( (float)renderGetScreenHeight() * renderGetScreenScale() ) / 2;
 
 	glViewport( 0, 0, iFBWidth, iFBHeight );
 
-	mShadowCamera.update( iFBWidth, iFBHeight );
+	maShadowCameras[iFBOIndex].update( iFBWidth, iFBHeight );
 	
-	tMatrix44 const* pViewMatrix = mShadowCamera.getViewMatrix();
-	tMatrix44 const* pOrthoMatrix = mShadowCamera.getOrthographicMatrix();
-	tMatrix44 const* pProjMatrix = mShadowCamera.getProjectionMatrix();
+	tMatrix44 const* pViewMatrix = maShadowCameras[iFBOIndex].getViewMatrix();
+	tMatrix44 const* pOrthoMatrix = maShadowCameras[iFBOIndex].getOrthographicMatrix();
+	tMatrix44 const* pProjMatrix = maShadowCameras[iFBOIndex].getProjectionMatrix();
+
+	// orthographic projection to fit in the view
+	tMatrix44 orthoMatrix;
+	float fViewSize = maShadowSplitInfo[iFBOIndex].mfCameraDistanceFromCenter * 0.5f;
+	Matrix44Orthographic( &orthoMatrix,
+						  -fViewSize,
+						  fViewSize,
+						  -fViewSize,
+						  fViewSize,
+						  1.0f,
+						  100.0f );
 
 	// shader
 	GLuint iShader = CShaderManager::instance()->getShader( "shadow_view" );
 	glUseProgram( iShader );
-	glBindFramebuffer( GL_DRAW_FRAMEBUFFER, miShadowViewFBO );
+	glBindFramebuffer( GL_DRAW_FRAMEBUFFER, maiShadowViewFBOs[iFBOIndex] );
 
 	glClearColor( 0.0f, 0.0f, 0.0f, 0.0f );
 	glClear( GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT );
@@ -1878,7 +1954,8 @@ void CGameRender::drawShadowCamera( void )
 
 	tMatrix44 viewMatrix, projMatrix;
 	Matrix44Transpose( &viewMatrix, pViewMatrix );
-	Matrix44Transpose( &projMatrix, pProjMatrix );
+	//Matrix44Transpose( &projMatrix, pProjMatrix );
+	Matrix44Transpose( &projMatrix, &orthoMatrix );
 
 	glUniformMatrix4fv( iViewMatrix, 1, GL_FALSE, viewMatrix.afEntries ); 
 	glUniformMatrix4fv( iProjMatrix, 1, GL_FALSE, projMatrix.afEntries ); 

@@ -1,0 +1,24 @@
+uniform sampler2D shadowTex;
+
+varying vec2 vTexCoord;
+const float fDTex = 0.005;
+
+void main( void )
+{
+	vec4 color = vec4( 0.0, 0.0, 0.0, 1.0 );
+
+	for( float fY = 1.0; fY < 4.0; fY += 1.0f )
+	{
+		for( float fX = 1.0; fX < 4.0; fX += 1.0f )
+		{
+			vec2 texCoord = vec2( vTexCoord.x + ( fX - 2.0 ) * fDTex,
+								  vTexCoord.y + ( fY - 2.0 ) * fDTex );
+
+			color.xyz += texture2D( shadowTex, texCoord );
+		}
+	}
+
+	color.xyz /= 9.0;
+
+	gl_FragColor = color;
+}

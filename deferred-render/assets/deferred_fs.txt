@@ -14,6 +14,7 @@ const vec4 ambientLight = vec4( 0.1, 0.1, 0.1, 1.0 );
 const vec4 hazeColor = vec4( 0.5, 0.5, 0.5, 1.0 );
 
 const float fDTex = 0.005;
+const float fDShadowTex = 0.001;
 
 void main( void )
 {
@@ -41,7 +42,22 @@ void main( void )
 	//float fDepth = clamp( texture2D( depthTex, vTexCoord ).z - 0.5, 0.0, 1.0 );
 	
 	// shadow texture
-	vec4 shadowColor = texture2D( shadowTex, vTexCoord );
+	//vec4 shadowColor = texture2D( shadowTex, vTexCoord );
+
+	// filtered shadow color
+	vec4 shadowColor = vec4( 0.0, 0.0, 0.0, 1.0 );
+	for( float fY = 1.0; fY < 4.0; fY += 1.0f )
+	{
+		for( float fX = 1.0; fX < 4.0; fX += 1.0f )
+		{
+			vec2 texCoord = vec2( vTexCoord.x + ( fX - 2.0 ) * fDShadowTex,
+								  vTexCoord.y + ( fY - 2.0 ) * fDShadowTex );
+
+			shadowColor.xyz += texture2D( shadowTex, texCoord );
+		}
+	}
+
+	shadowColor.xyz /= 9.0;
 
 	vec4 color = texture2D( albedoTex, vTexCoord );
 	vec4 lightColor = texture2D( lightTex, vTexCoord );

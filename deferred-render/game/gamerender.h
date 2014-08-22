@@ -6,6 +6,8 @@
 #include "level.h"
 #include "font.h"
 
+#define MAX_SHADOW_SPLITS 3
+
 struct LightInfo
 {
 	tVector4		mPosition;
@@ -17,6 +19,15 @@ struct LightInfo
 };
 
 typedef struct LightInfo tLightInfo;
+
+struct ShadowSplitInfo
+{
+	float		mfCameraDistanceFromCenter;
+	float		mfStartSplitZ;
+	float		mfCenterDistanceFromStart;
+};
+
+typedef struct ShadowSplitInfo tShadowSplitInfo;
 
 class CGame;
 
@@ -78,7 +89,7 @@ protected:
 	void initFBO( void );
 
 	void setupShadowCamera( void );
-	void drawShadowCamera( void );
+	void drawShadowCamera( int iFBOIndex );
 
 	GLuint miLeftDeferredFBO;
 	GLuint miLeftPositionTexture;
@@ -132,14 +143,15 @@ protected:
 
 	bool	mbVRView;
 
-	GLuint		miShadowViewFBO;
-	GLuint		miShadowViewDepthTexture;
-	GLuint		miShadowViewDepthBuffer;
+	GLuint				maiShadowViewFBOs[MAX_SHADOW_SPLITS];
+	GLuint				maiShadowViewDepthTextures[MAX_SHADOW_SPLITS];
+	GLuint				maiShadowViewDepthBuffers[MAX_SHADOW_SPLITS];
 
-	GLuint		miShadowFBO;
-	GLuint		miShadowTexture;
+	GLuint				miShadowFBO;
+	GLuint				miShadowTexture;
 
-	CCamera		mShadowCamera;
+	CCamera				maShadowCameras[MAX_SHADOW_SPLITS];
+	tShadowSplitInfo	maShadowSplitInfo[MAX_SHADOW_SPLITS];
 };
 
 #endif // __GAMERENDER_H__
