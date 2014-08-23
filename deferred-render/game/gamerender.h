@@ -48,6 +48,7 @@ public:
 	inline void setVRView( bool bVRView ) { mbVRView = bVRView; }
 
 	void toggleShader( void );
+	void moveLight( float fX, float fY, float fZ );
 
 protected:
 	CCamera const*			mpCamera;

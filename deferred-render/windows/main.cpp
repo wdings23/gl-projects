@@ -278,15 +278,27 @@ static void specialKBInput( int iKey, int iX, int iY )
 	switch( iKey )
 	{
 		case GLUT_KEY_LEFT:
+			{
+				CGame::instance()->moveLight( -0.1f, 0.0f, 0.0f );
+			}
 			break;
 
 		case GLUT_KEY_RIGHT:
+			{
+				CGame::instance()->moveLight( 0.1f, 0.0f, 0.0f );
+			}
 			break;
 
 		case GLUT_KEY_UP:
+			{
+				CGame::instance()->moveLight( 0.0f, 0.0f, 0.1f );
+			}
 			break;
 
 		case GLUT_KEY_DOWN:
+			{
+				CGame::instance()->moveLight( 0.0f, 0.0f, -0.1f );
+			}
 			break;
 	}
 }

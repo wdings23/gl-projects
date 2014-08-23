@@ -2009,3 +2009,15 @@ void CGameRender::drawShadowCamera( int iFBOIndex )
 
 	glBindFramebuffer( GL_DRAW_FRAMEBUFFER, 0 );
 }
+
+/*
+**
+*/
+void CGameRender::moveLight( float fX, float fY, float fZ )
+{
+	mLightDir.fX += fX;
+	mLightDir.fY += fY;
+	mLightDir.fZ += fZ;
+
+	Vector4Normalize( &mLightDir, &mLightDir );
+}

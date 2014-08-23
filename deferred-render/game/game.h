@@ -44,6 +44,8 @@ public:
     inline void clearInputPos( void )   { mLastTouch.fX = mLastTouch.fY = -1.0f; }
 	inline void toggleVRView( void ) { mbVRView = !mbVRView; mGameRender.setVRView( mbVRView ); }
 
+	inline void moveLight( float fX, float fY, float fZ ) { mGameRender.moveLight( fX, fY, fZ ); }
+
 protected:
 	int						miPrevState;
 	int						miState;
