@@ -152,6 +152,8 @@ protected:
 
 	CCamera				maShadowCameras[MAX_SHADOW_SPLITS];
 	tShadowSplitInfo	maShadowSplitInfo[MAX_SHADOW_SPLITS];
+
+	tVector4			mLightDir;
 };
 
 #endif // __GAMERENDER_H__

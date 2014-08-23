@@ -39,9 +39,9 @@ if( iShadowIndex == 1 )
 }
 else if( iShadowIndex == 2 )
 {
-	splitColor.x = 0.0;
-	splitColor.y = 0.0;
-	splitColor.z = 1.0;
+	splitColor.x = 1.0;
+	splitColor.y = 1.0;
+	splitColor.z = 0.0;
 }*/
 
 	// position from light's pov

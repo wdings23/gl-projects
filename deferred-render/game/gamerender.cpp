@@ -90,21 +90,26 @@ void CGameRender::init( void )
 	mpCurrShaderProgram = CShaderManager::instance()->getShaderProgram( miShaderIndex );
 	CHUD::instance()->setShaderName( mpCurrShaderProgram->mszName );
 
-	maShadowSplitInfo[0].mfCameraDistanceFromCenter = 6.0f;
+	maShadowSplitInfo[0].mfCameraDistanceFromCenter = 4.0f;
 	maShadowSplitInfo[0].mfStartSplitZ = 0.0f;
 	maShadowSplitInfo[0].mfCenterDistanceFromStart = 2.0f;
 
 	maShadowSplitInfo[1].mfCameraDistanceFromCenter = 12.0f;
-	maShadowSplitInfo[1].mfStartSplitZ = 4.0f;
-	maShadowSplitInfo[1].mfCenterDistanceFromStart = 8.0f;
+	maShadowSplitInfo[1].mfStartSplitZ = 3.0f;
+	maShadowSplitInfo[1].mfCenterDistanceFromStart = 5.0f;
 
 	maShadowSplitInfo[2].mfCameraDistanceFromCenter = 15.0f;
-	maShadowSplitInfo[2].mfStartSplitZ = 18.0f;
-	maShadowSplitInfo[2].mfCenterDistanceFromStart = 14.0f;
+	maShadowSplitInfo[2].mfStartSplitZ = 10.0f;
+	maShadowSplitInfo[2].mfCenterDistanceFromStart = 12.0f;
 
 	initInstancing();
 	initFBO();
 	setupShadowCamera();
+
+	mLightDir.fX = -1.0f;
+	mLightDir.fY = 1.0f;
+	mLightDir.fZ = -0.25f;
+	mLightDir.fW = 1.0f;
 }
 
 /*
@@ -854,15 +859,13 @@ void CGameRender::initInstancing( void )
 
     glUseProgram( 0 );
     
-	
-
 	createSphere();
 	
 	glBindBuffer( GL_ARRAY_BUFFER, 0 );
 	glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );	
 
 	// light info
-	miNumLights = 50;
+	miNumLights = 0;
 	const int iRandRange = 1000;
 	maLightInfo = (tLightInfo *)malloc( sizeof( tLightInfo ) * miNumLights );
 	for( int i = 0; i < miNumLights; i++ )
@@ -1887,9 +1890,6 @@ void CGameRender::drawShadowCamera( int iFBOIndex )
 	tVector4 const* pCamPos = mpCamera->getPosition();
 	tVector4 const* pCamLook = mpCamera->getLookAt();
 
-	tVector4 lightDir = { -1.0f, 1.0f, 0.0f, 1.0f };
-	Vector4Normalize( &lightDir, &lightDir );
-
 	tVector4 newPos, newLookAt;
 
 	memcpy( &newPos, pCamPos, sizeof( tVector4 ) );
@@ -1902,9 +1902,9 @@ void CGameRender::drawShadowCamera( int iFBOIndex )
 	float fLightDistance = maShadowSplitInfo[iFBOIndex].mfCameraDistanceFromCenter;
 	float fCenterDistance = maShadowSplitInfo[iFBOIndex].mfCenterDistanceFromStart;
 
-	newPos.fX = pCamPos->fX + camDir.fX * fCenterDistance + lightDir.fX * fLightDistance;
-	newPos.fY = pCamPos->fY + camDir.fY * fCenterDistance + lightDir.fY * fLightDistance;
-	newPos.fZ = pCamPos->fZ + camDir.fZ * fCenterDistance + lightDir.fZ * fLightDistance;
+	newPos.fX = pCamPos->fX + camDir.fX * fCenterDistance + mLightDir.fX * fLightDistance;
+	newPos.fY = pCamPos->fY + camDir.fY * fCenterDistance + mLightDir.fY * fLightDistance;
+	newPos.fZ = pCamPos->fZ + camDir.fZ * fCenterDistance + mLightDir.fZ * fLightDistance;
 
 	newLookAt.fX = pCamPos->fX + camDir.fX * fCenterDistance;
 	newLookAt.fY = pCamPos->fY + camDir.fY * fCenterDistance;
